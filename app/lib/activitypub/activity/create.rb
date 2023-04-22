@@ -124,7 +124,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
         searchability: searchability,
         thread: replied_to_status,
         conversation: conversation_from_context,
-        media_attachment_ids: process_attachments.take(4).map(&:id),
+        media_attachment_ids: process_attachments.take(16).map(&:id),
         poll: process_poll,
         quote: quote,
         generator: generator,
@@ -266,7 +266,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     media_attachments = []
 
     as_array(@object['attachment']).each do |attachment|
-      next if attachment['url'].blank? || media_attachments.size >= 4
+      next if attachment['url'].blank? || media_attachments.size >= 16
 
       begin
         href             = Addressable::URI.parse(attachment['url']).normalize.to_s

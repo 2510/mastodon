@@ -154,7 +154,7 @@ class ThumbnailGallery extends React.PureComponent {
     const { visible } = this.state;
 
     const uncached = media.every(attachment => attachment.get('type') === 'unknown');
-    const children = media.take(4).map((attachment) => <Item key={attachment.get('id')} attachment={attachment} visible={visible || uncached} />);
+    const children = media.take(16).map((attachment) => <Item key={attachment.get('id')} attachment={attachment} visible={visible || uncached} />);
 
     return (
       <div className='thumbnail-gallery' ref={this.handleRef}>
