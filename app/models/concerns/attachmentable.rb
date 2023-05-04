@@ -22,7 +22,7 @@ module Attachmentable
 
   included do
     def self.has_attached_file(name, options = {}) # rubocop:disable Naming/PredicateName
-      options = { validate_media_type: false }.merge(options)
+      options = { validate_media_type: false, default_url: "/#{name.to_s.pluralize}/original/missing.png" }.merge(options)
       super(name, options)
       send(:"before_#{name}_post_process") do
         attachment = send(name)

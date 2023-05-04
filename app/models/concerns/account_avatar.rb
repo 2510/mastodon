@@ -13,8 +13,22 @@ module AccountAvatar
 
   class_methods do
     def avatar_styles(file)
-      styles = { original: { geometry: '400x400#', file_geometry_parser: FastGeometryParser, blurhash: BLURHASH_OPTIONS } }
-      styles[:static] = { geometry: '400x400#', format: 'png', convert_options: '-coalesce', file_geometry_parser: FastGeometryParser } if file.content_type == 'image/gif'
+      styles = {
+        original: {
+          geometry: '400x400#',
+          file_geometry_parser: FastGeometryParser,
+          convert_options: '+profile exif',
+        }.freeze,
+
+        tiny: {
+          format: 'webp',
+          file_geometry_parser: FastGeometryParser,
+          convert_options: '-coalesce +profile exif -colorspace RGB -filter Lanczos -define filter:blur=.9891028367558475 -distort Resize \'120x120^\' -gravity center -crop 1:1 -colorspace sRGB -define webp:use-sharp-yuv=1 -define webp:emulate-jpeg-size=true -quality 80',
+          blurhash: BLURHASH_OPTIONS,
+        }.freeze,
+      }
+
+      styles[:static] = { geometry: '400x400#', format: 'webp', animated: false, convert_options: '-coalesce +profile exif', file_geometry_parser: FastGeometryParser, processors: [:thumbnail] } if file.content_type == 'image/gif'
       styles
     end
 
@@ -23,7 +37,7 @@ module AccountAvatar
 
   included do
     # Avatar upload
-    has_attached_file :avatar, styles: ->(f) { avatar_styles(f) }, convert_options: { all: '+profile exif' }, processors: [:lazy_thumbnail, :blurhash_transcoder]
+    has_attached_file :avatar, styles: ->(f) { avatar_styles(f) }, processors: [:lazy_thumbnail, :blurhash_transcoder, :thumbhash_transcoder]
     validates_attachment_content_type :avatar, content_type: IMAGE_MIME_TYPES
     validates_attachment_size :avatar, less_than: LIMIT
     remotable_attachment :avatar, LIMIT, suppress_errors: false
@@ -31,6 +45,10 @@ module AccountAvatar
 
   def avatar_original_url
     avatar.url(:original)
+  end
+
+  def avatar_tiny_url
+    avatar.url(:tiny)
   end
 
   def avatar_static_url

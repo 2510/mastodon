@@ -21,6 +21,7 @@
 #  thumbnail_updated_at   :datetime
 #  thumbnail_remote_url   :string
 #  blurhash               :string
+#  thumbhash              :string
 #  last_fetched_at        :datetime
 #  status                 :integer          default("up"), not null
 #  note                   :string           default(""), not null

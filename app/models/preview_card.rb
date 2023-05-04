@@ -24,6 +24,7 @@
 #  embed_url                    :string           default(""), not null
 #  image_storage_schema_version :integer
 #  blurhash                     :string
+#  thumbhash                    :string
 #
 
 class PreviewCard < ApplicationRecord
@@ -45,7 +46,7 @@ class PreviewCard < ApplicationRecord
 
   has_and_belongs_to_many :statuses
 
-  has_attached_file :image, processors: [:thumbnail, :blurhash_transcoder], styles: ->(f) { image_styles(f) }, convert_options: { all: '-quality 80 +profile exif' }, validate_media_type: false
+  has_attached_file :image, processors: [:thumbnail, :blurhash_transcoder, :thumbhash_transcoder], styles: ->(f) { image_styles(f) }, convert_options: { all: '-quality 80 +profile exif' }, validate_media_type: false
 
   validates :url, presence: true, uniqueness: true
   validates_attachment_content_type :image, content_type: IMAGE_MIME_TYPES
@@ -81,11 +82,17 @@ class PreviewCard < ApplicationRecord
           pixels: 230_400, # 640x360px
           file_geometry_parser: FastGeometryParser,
           convert_options: '-coalesce +profile exif',
-          blurhash: BLURHASH_OPTIONS,
         },
+
+        tiny: {
+          format: 'webp',
+          file_geometry_parser: FastGeometryParser,
+          convert_options: '-coalesce +profile exif -colorspace RGB -filter Lanczos -define filter:blur=.9891028367558475 -distort Resize 40000@ -colorspace sRGB -define webp:use-sharp-yuv=1',
+          blurhash: BLURHASH_OPTIONS,
+        }.freeze,
       }
 
-      styles[:original][:format] = 'jpg' if f.instance.image_content_type == 'image/gif'
+      styles[:original].merge({ format: 'webp', animated: false, processors: [:thumbnail]}) if f.instance.image_content_type == 'image/gif'
       styles
     end
     # rubocop:enable Naming/MethodParameterName

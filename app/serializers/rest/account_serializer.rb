@@ -5,7 +5,8 @@ class REST::AccountSerializer < ActiveModel::Serializer
 
   attributes :id, :username, :acct, :display_name, :locked, :bot, :cat, :discoverable, :group, :created_at,
              :note, :url, :avatar, :avatar_static, :header, :header_static, :searchability,
-             :followers_count, :following_count, :subscribing_count, :statuses_count, :last_status_at
+             :followers_count, :following_count, :subscribing_count, :statuses_count, :last_status_at,
+             :avatar_thumbhash, :header_thumbhash
 
   has_one :moved_to_account, key: :moved, serializer: REST::AccountSerializer, if: :moved_and_not_nested?
 
@@ -41,19 +42,39 @@ class REST::AccountSerializer < ActiveModel::Serializer
   end
 
   def avatar
-    full_asset_url(object.suspended? ? object.avatar.default_url : object.avatar_original_url)
+    if respond_to?(:current_user) && current_user&.setting_use_low_resolution_thumbnails
+      full_asset_url(object.suspended? ? object.avatar.default_url : object.avatar_tiny_url, ext: object.avatar_file_name)
+    else
+      full_asset_url(object.suspended? ? object.avatar.default_url : object.avatar_original_url)
+    end
   end
 
   def avatar_static
-    full_asset_url(object.suspended? ? object.avatar.default_url : object.avatar_static_url)
+    if respond_to?(:current_user) && current_user&.setting_use_low_resolution_thumbnails
+      full_asset_url(object.suspended? ? object.avatar.default_url : object.avatar_tiny_url, ext: object.avatar_file_name)
+    else
+      full_asset_url(object.suspended? ? object.avatar.default_url : object.avatar_static_url, ext: object.avatar_file_name)
+    end
   end
 
   def header
-    full_asset_url(object.suspended? ? object.header.default_url : object.header_original_url)
+    if object.header_file_name.nil?
+      full_asset_url(object.header_tiny_url)
+    elsif respond_to?(:current_user) && current_user&.setting_use_low_resolution_thumbnails
+      full_asset_url(object.suspended? ? object.header.default_url : object.header_tiny_url, ext: object.header_file_name)
+    else
+      full_asset_url(object.suspended? || object.header.nil? ? object.header.default_url : object.header_original_url)
+    end
   end
 
   def header_static
-    full_asset_url(object.suspended? ? object.header.default_url : object.header_static_url)
+    if object.header_file_name.nil?
+      full_asset_url(object.header_tiny_url)
+    elsif respond_to?(:current_user) && current_user&.setting_use_low_resolution_thumbnails
+      full_asset_url(object.suspended? || object.header.nil? ? object.header.default_url : object.header_tiny_url, ext: object.header_file_name)
+    else
+      full_asset_url(object.suspended? || object.header.nil? ? object.header.default_url : object.header_static_url, ext: object.header_file_name)
+    end
   end
 
   def created_at

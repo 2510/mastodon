@@ -19,6 +19,7 @@
 #  description                 :text
 #  scheduled_status_id         :bigint(8)
 #  blurhash                    :string
+#  thumbhash                   :string
 #  processing                  :integer
 #  file_storage_schema_version :integer
 #  thumbnail_file_name         :string
@@ -55,8 +56,8 @@ class MediaAttachment < ApplicationRecord
     small
   ).freeze
 
-  IMAGE_MIME_TYPES             = %w(image/jpeg image/png image/gif image/webp image/heif image/heic).freeze
-  IMAGE_CONVERTIBLE_MIME_TYPES = %w(image/webp image/heif image/heic).freeze
+  IMAGE_MIME_TYPES             = %w(image/jpeg image/png image/gif image/webp image/heif image/heic image/avif).freeze
+  IMAGE_CONVERTIBLE_MIME_TYPES = %w(image/heif image/heic).freeze
   VIDEO_MIME_TYPES             = %w(video/webm video/mp4 video/quicktime video/ogg).freeze
   VIDEO_CONVERTIBLE_MIME_TYPES = %w(video/webm video/quicktime).freeze
   AUDIO_MIME_TYPES             = %w(audio/wave audio/wav audio/x-wav audio/x-pn-wave audio/ogg audio/vorbis audio/mpeg audio/mp3 audio/webm audio/flac audio/aac audio/m4a audio/x-m4a audio/mp4 audio/3gpp video/x-ms-asf).freeze
@@ -73,8 +74,15 @@ class MediaAttachment < ApplicationRecord
     }.freeze,
 
     small: {
-      pixels: 160_000, # 400x400px
+      format: 'webp',
       file_geometry_parser: FastGeometryParser,
+      convert_options: '-coalesce +profile exif -colorspace RGB -filter Lanczos -define filter:blur=.9891028367558475 -distort Resize 160000@ -colorspace sRGB -define webp:use-sharp-yuv=1',
+    }.freeze,
+
+    tiny: {
+      format: 'webp',
+      file_geometry_parser: FastGeometryParser,
+      convert_options: '-coalesce +profile exif -colorspace RGB -filter Lanczos -define filter:blur=.9891028367558475 -distort Resize 40000@ -colorspace sRGB -define webp:use-sharp-yuv=1',
       blurhash: BLURHASH_OPTIONS,
     }.freeze,
   }.freeze
@@ -121,11 +129,21 @@ class MediaAttachment < ApplicationRecord
       convert_options: {
         output: {
           'loglevel' => 'fatal',
-          vf: 'scale=\'min(400\, iw):min(400\, ih)\':force_original_aspect_ratio=decrease',
+          vf: 'thumbnail=n=100,scale=\'min(400\, iw):min(400\, ih)\':force_original_aspect_ratio=decrease',
         }.freeze,
       }.freeze,
       format: 'png',
-      time: 0,
+      file_geometry_parser: FastGeometryParser,
+    }.freeze,
+
+    tiny: {
+      convert_options: {
+        output: {
+          'loglevel' => 'fatal',
+          vf: 'thumbnail=n=100,scale=\'min(200\, iw):min(200\, ih)\':force_original_aspect_ratio=decrease',
+        }.freeze,
+      }.freeze,
+      format: 'webp',
       file_geometry_parser: FastGeometryParser,
       blurhash: BLURHASH_OPTIONS,
     }.freeze,
@@ -148,6 +166,7 @@ class MediaAttachment < ApplicationRecord
 
   VIDEO_CONVERTED_STYLES = {
     small: VIDEO_STYLES[:small].freeze,
+    tiny: VIDEO_STYLES[:tiny].freeze,
     original: VIDEO_FORMAT.freeze,
   }.freeze
 
@@ -285,15 +304,15 @@ class MediaAttachment < ApplicationRecord
 
     def file_processors(instance)
       if instance.file_content_type == 'image/gif'
-        [:gif_transcoder, :blurhash_transcoder]
+        [:gif_transcoder, :blurhash_transcoder, :thumbhash_transcoder]
       elsif VIDEO_MIME_TYPES.include?(instance.file_content_type)
-        [:transcoder, :blurhash_transcoder, :type_corrector]
+        [:transcoder, :blurhash_transcoder, :thumbhash_transcoder, :type_corrector]
       elsif AUDIO_MIME_TYPES.include?(instance.file_content_type)
         [:image_extractor, :transcoder, :type_corrector]
       elsif IMAGE_CONVERTIBLE_MIME_TYPES.include?(instance.file_content_type)
-        [:img_converter, :lazy_thumbnail, :blurhash_transcoder, :type_corrector]
+        [:img_converter, :lazy_thumbnail, :blurhash_transcoder, :thumbhash_transcoder, :type_corrector]
       else
-        [:lazy_thumbnail, :blurhash_transcoder, :type_corrector]
+        [:lazy_thumbnail, :blurhash_transcoder, :thumbhash_transcoder, :type_corrector]
       end
     end
   end
@@ -351,7 +370,7 @@ class MediaAttachment < ApplicationRecord
     meta = (file.instance_read(:meta) || {}).with_indifferent_access.slice(*META_KEYS)
 
     file.queued_for_write.each do |style, file|
-      meta[style] = style == :small || image? ? image_geometry(file) : video_metadata(file)
+      meta[style] = style == :small || style == :tiny || image? ? image_geometry(file) : video_metadata(file)
     end
 
     meta[:small] = image_geometry(thumbnail.queued_for_write[:original]) if thumbnail.queued_for_write.key?(:original)

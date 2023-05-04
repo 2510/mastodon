@@ -20,6 +20,7 @@
 #  image_storage_schema_version :integer
 #  width                        :integer
 #  height                       :integer
+#  thumbhash                    :string
 #
 
 class CustomEmoji < ApplicationRecord
@@ -42,7 +43,7 @@ class CustomEmoji < ApplicationRecord
 
   has_attached_file :image, styles: {
       original: { convert_options: '-coalesce +profile exif', file_geometry_parser: FastGeometryParser, processors: ->(f) { file_processors f } },
-      static: { format: 'png', convert_options: '-coalesce +profile exif', file_geometry_parser: FastGeometryParser }
+      static: { format: 'webp', animated: false, convert_options: '-coalesce +profile exif', file_geometry_parser: FastGeometryParser, processors: [:thumbnail] }
     }, validate_media_type: false
 
   before_validation :downcase_domain

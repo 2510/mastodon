@@ -102,6 +102,7 @@ class InitialStateSerializer < ActiveModel::Serializer
       store[:hide_link_preview]                 = object.current_account.user.setting_hide_link_preview
       store[:hide_photo_preview]                = object.current_account.user.setting_hide_photo_preview
       store[:hide_video_preview]                = object.current_account.user.setting_hide_video_preview
+      store[:use_low_resolution_thumbnails]     = object.current_account.user.setting_use_low_resolution_thumbnails
     else
       store[:auto_play_gif] = Setting.auto_play_gif
       store[:display_media] = Setting.display_media

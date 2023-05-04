@@ -146,6 +146,7 @@ defaults: &defaults
   allow_poll_image: false
   poll_max_options: 4
   reaction_max_per_account: 1
+  use_low_resolution_thumbnails: false
 
 development:
   <<: *defaults
