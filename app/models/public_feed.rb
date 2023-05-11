@@ -21,13 +21,11 @@ class PublicFeed
   # @param [Integer] min_id
   # @return [Array<Status>]
   def get(limit, max_id = nil, since_id = nil, min_id = nil)
-    return Status.none if local_only? && !imast? && !mastodon_for_ios? && !mastodon_for_android?
-
     scope = public_scope
 
     scope.merge!(without_replies_scope) unless with_replies?
     scope.merge!(without_reblogs_scope) unless with_reblogs?
-    scope.merge!(local_only_scope) if index_only? && !account?
+    scope.merge!(local_only_scope) if (index_only? && !account?) || local_only?
     scope.merge!(public_searchable_scope) if index_only? && !account?
     scope.merge!(remote_only_scope) if remote_only?
     scope.merge!(domain_only_scope) if domain_only?

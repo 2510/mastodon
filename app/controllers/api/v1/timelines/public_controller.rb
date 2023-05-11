@@ -23,12 +23,10 @@ class Api::V1::Timelines::PublicController < Api::BaseController
   end
 
   def disable_federated_timeline?
-    !(truthy_param?(:local) || params[:domain]) && (current_user && !current_user.setting_enable_federated_timeline)
+    truthy_param?(:local) || params[:domain] || (current_user && !current_user.setting_enable_federated_timeline) || (!current_user && !Setting.show_known_fediverse_at_about_page)
   end
 
   def load_statuses
-    return [] if disable_federated_timeline?
-    
     cached_public_statuses_page
   end
 
@@ -49,8 +47,8 @@ class Api::V1::Timelines::PublicController < Api::BaseController
     PublicFeed.new(
       current_account,
       index: truthy_param?(:index),
-      local: truthy_param?(:local),
-      remote: truthy_param?(:remote),
+      local: truthy_param?(:local) || disable_federated_timeline?,
+      remote: truthy_param?(:remote) && !disable_federated_timeline?,
       domain: params[:domain],
       only_media: truthy_param?(:only_media),
       without_media: truthy_param?(:without_media),

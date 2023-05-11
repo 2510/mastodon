@@ -10,7 +10,7 @@ import { debounce } from 'lodash';
 import LoadingIndicator from 'mastodon/components/loading_indicator';
 
 const mapStateToProps = (state) => {
-  const timeline = state.getIn(['timelines', 'public'], ImmutableMap());
+  const timeline = state.getIn(['timelines', 'public:bot'], ImmutableMap());
 
   return {
     statusIds: timeline.get('items', ImmutableList()),
