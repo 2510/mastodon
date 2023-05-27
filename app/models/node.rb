@@ -31,6 +31,7 @@
 class Node < ApplicationRecord
   include DomainControlHelper
   include RoutingHelper
+  include Attachmentable
   include NodeThumbnail
   include NodeIcon
   include Paginable

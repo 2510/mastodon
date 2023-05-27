@@ -94,6 +94,8 @@ defaults: &defaults
     must_be_follower: false
     must_be_following: false
     must_be_following_dm: false
+    must_be_following_newcommer: false
+    must_be_following_newcommer_dm: false
     must_be_following_reference: true
   reserved_usernames:
     - admin
@@ -146,7 +148,10 @@ defaults: &defaults
   allow_poll_image: false
   poll_max_options: 4
   reaction_max_per_account: 1
+  attachments_max: 4
   use_low_resolution_thumbnails: false
+  use_fullsize_avatar_on_detail: false
+  use_fullsize_header_on_detail: false
 
 development:
   <<: *defaults

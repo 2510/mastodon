@@ -304,7 +304,7 @@ Rails.application.routes.draw do
       resource :sign_in_token_authentication, only: [:create, :destroy]
     end
 
-    resources :custom_emojis, only: [:index, :new, :create] do
+    resources :custom_emojis, only: [:index, :new, :create, :update, :edit] do
       collection do
         post :batch
       end
@@ -391,7 +391,7 @@ Rails.application.routes.draw do
       get '/streaming', to: 'streaming#index'
       get '/streaming/(*any)', to: 'streaming#index'
 
-      resources :custom_emojis, only: [:index]
+      resources :custom_emojis, only: [:index, :show]
       resources :suggestions, only: [:index, :destroy]
       resources :scheduled_statuses, only: [:index, :show, :update, :destroy]
       resources :preferences, only: [:index]

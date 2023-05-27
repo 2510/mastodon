@@ -47,7 +47,7 @@
 #  devices_url                   :string
 #  suspension_origin             :integer
 #  sensitized_at                 :datetime
-#  settings                      :jsonb            default("{}"), not null
+#  settings                      :jsonb            default({}), not null
 #  silence_mode                  :integer          default(0), not null
 #  searchability                 :integer          default(3), not null
 #  featured_tags_collection_url  :string
@@ -70,6 +70,7 @@ class Account < ApplicationRecord
 
   DEFAULT_FIELDS_SIZE = 8
 
+  include Attachmentable
   include AccountAssociations
   include Attachmentable
   include AccountAvatar
@@ -170,6 +171,10 @@ class Account < ApplicationRecord
 
   def moved?
     moved_to_account_id.present?
+  end
+
+  def newcommer?
+    created_at > Time.current.ago(3.days)
   end
 
   def bot?
@@ -414,6 +419,10 @@ class Account < ApplicationRecord
 
   def excluded_from_timeline_domains
     Rails.cache.fetch("exclude_domains_for:#{id}") { domain_blocks.pluck(:domain) }
+  end
+
+  def inbox_url
+    self[:inbox_url]
   end
 
   def preferred_inbox_url
