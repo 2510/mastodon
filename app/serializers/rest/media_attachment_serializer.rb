@@ -26,16 +26,14 @@ class REST::MediaAttachmentSerializer < ActiveModel::Serializer
   end
 
   def preview_url
-    tiny = respond_to?(:current_user) && current_user&.setting_use_low_resolution_thumbnails
+    version = respond_to?(:current_user) && current_user&.setting_use_low_resolution_thumbnails ? :tiny : :small
 
-    if object.needs_redownload?
-      media_proxy_url(object.id, tiny ? :tiny : :small)
-    elsif tiny && object.file.styles.key?(:tiny)
-      full_asset_url(object.file.url(:tiny), ext: object.file_file_name)
-    elsif object.file.styles.key?(:small)
-      full_asset_url(object.file.url(:small), ext: object.file_file_name)
-    elsif object.thumbnail.present?
+    if object.thumbnail.present?
       full_asset_url(object.thumbnail.url(:original))
+    elsif object.needs_redownload? || object.needs_reprocess?(version)
+      media_proxy_url(object.id, version)
+    else
+      full_asset_url(object.file.url(version), ext: object.file_file_name)
     end
   end
 

@@ -113,7 +113,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
         uri: object_uri,
         url: object_url || object_uri,
         account: @account,
-        text: text_from_content || '',
+        text: add_compatible_content(text_from_content || ''),
         language: detected_language,
         spoiler_text: converted_object_type? ? '' : (text_from_summary || ''),
         created_at: @object['published'],
@@ -124,7 +124,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
         searchability: searchability,
         thread: replied_to_status,
         conversation: conversation_from_context,
-        media_attachment_ids: process_attachments.take(16).map(&:id),
+        media_attachment_ids: process_attachments.take(Setting.attachments_max).map(&:id),
         poll: process_poll,
         quote: quote,
         generator: generator,
@@ -239,16 +239,31 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     return if skip_download?
     return if tag['name'].blank? || tag['icon'].blank? || tag['icon']['url'].blank?
 
-    shortcode = tag['name'].delete(':')
-    image_url = tag['icon']['url']
-    uri       = tag['id']
-    updated   = tag['updated']
-    emoji     = CustomEmoji.find_by(shortcode: shortcode, domain: @account.domain)
+    shortcode       = tag['name'].delete(':')
+    image_url       = tag['icon']['url']
+    uri             = tag['id']
+    updated         = tag['updated']
+    copy_permission = tag['copyPermission']
+    license         = tag['license']
+    aliases         = as_array(tag['keywords'])
+    usage_info      = tag['usageInfo']
+    author          = tag['author']
+    description     = tag['description']
+    is_based_on     = tag['isBasedOn']
+    emoji           = CustomEmoji.find_by(shortcode: shortcode, domain: @account.domain)
 
     return unless emoji.nil? || image_url != emoji.image_remote_url || (updated && updated >= emoji.updated_at)
 
     emoji ||= CustomEmoji.new(domain: @account.domain, shortcode: shortcode, uri: uri)
+    emoji.copy_permission  = case copy_permission when 'allow', true, '1' then 'allow' when 'deny', false, '0' then 'deny' when 'conditional' then 'conditional' else 'none' end
+    emoji.license          = license
+    emoji.aliases          = aliases
+    emoji.usage_info       = usage_info
+    emoji.author           = author
+    emoji.description      = description
+    emoji.is_based_on      = is_based_on
     emoji.image_remote_url = image_url
+    emoji.updated_at       = updated   if updated
     emoji.save
   rescue Seahorse::Client::NetworkingError => e
     Rails.logger.warn "Error storing emoji: #{e}"
@@ -266,7 +281,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     media_attachments = []
 
     as_array(@object['attachment']).each do |attachment|
-      next if attachment['url'].blank? || media_attachments.size >= 16
+      next if attachment['url'].blank? || media_attachments.size >= Setting.attachments_max
 
       begin
         href             = Addressable::URI.parse(attachment['url']).normalize.to_s
@@ -437,6 +452,14 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     elsif content_language_map?
       @object['contentMap'].values.first
     end
+  end
+
+  def add_compatible_content(html)
+    attachment_count = as_array(@object['attachment']).count
+
+    return html unless !html.include?('original-media-link') && attachment_count > Setting.attachments_max
+
+    Formatter.instance.add_original_link(html, object_url || object_uri, I18n.t('statuses.attached.description', attached: attachment_count))
   end
 
   def text_from_summary

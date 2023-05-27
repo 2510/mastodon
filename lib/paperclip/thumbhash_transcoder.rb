@@ -6,6 +6,9 @@ module Paperclip
       return @file unless %i(tiny static).include?(options[:style])
 
       pixels   = convert(':source -sample \'100x100>\' -depth 8 RGBA:-', source: "#{File.expand_path(@file.path)}[0]").unpack('C*')
+
+      return @file if pixels.nil?
+
       geometry = options.fetch(:file_geometry_parser).from_file(@file)
 
       if geometry.width > 100 || geometry.height > 100

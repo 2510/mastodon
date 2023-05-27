@@ -119,12 +119,14 @@ class ActivityPub::ProcessAccountService < BaseService
 
   def set_fetchable_attributes!
     begin
+      previous_avatar_remote_url = @account.avatar_remote_url
       @account.avatar_remote_url = image_url('icon') || '' unless skip_download?
-      if @account.avatar_remote_url.blank?
+      if @account.avatar_remote_url.blank? || @account.avatar_remote_url != previous_avatar_remote_url
         # no action
-      elsif @account.avatar.exists?(:original)
-        @account.avatar.reprocess!(:static) unless @account.avatar.exists?(:static)
-        @account.avatar.reprocess!(:tiny) unless @account.avatar.exists?(:tiny)
+      elsif @account.avatar_exists?
+        @account.avatar.styles.keys.each do |style|
+          @account.avatar.reprocess!(style) if style != @account.avatar.default_style && @account.needs_avatar_reprocess?(style)
+        end
       else
         @account.reset_avatar!
       end
@@ -132,12 +134,14 @@ class ActivityPub::ProcessAccountService < BaseService
       RedownloadAvatarWorker.perform_in(rand(30..600).seconds, @account.id)
     end
     begin
+      previous_header_remote_url = @account.header_remote_url
       @account.header_remote_url = image_url('image') || '' unless skip_download?
-      if @account.header_remote_url.blank?
+      if @account.header_remote_url.blank? || @account.header_remote_url != previous_header_remote_url
         # no action
-      elsif @account.header.exists?(:original)
-        @account.header.reprocess!(:static) unless @account.header.exists?(:static)
-        @account.header.reprocess!(:tiny) unless @account.header.exists?(:tiny)
+      elsif @account.header_exists?
+        @account.header.styles.keys.each do |style|
+          @account.header.reprocess!(style) if style != @account.header.default_style && @account.needs_header_reprocess?(style)
+        end
       else
         @account.reset_header!
       end
@@ -425,18 +429,33 @@ class ActivityPub::ProcessAccountService < BaseService
     return if skip_download?
     return if tag['name'].blank? || tag['icon'].blank? || tag['icon']['url'].blank?
 
-    shortcode = tag['name'].delete(':')
-    image_url = tag['icon']['url']
-    uri       = tag['id']
-    updated   = tag['updated']
-    emoji     = CustomEmoji.find_by(shortcode: shortcode, domain: @account.domain)
+    shortcode       = tag['name'].delete(':')
+    image_url       = tag['icon']['url']
+    uri             = tag['id']
+    updated         = tag['updated']
+    copy_permission = tag['copyPermission']
+    license         = tag['license']
+    aliases         = as_array(tag['keywords'])
+    usage_info      = tag['usageInfo']
+    author          = tag['author']
+    description     = tag['description']
+    is_based_on     = tag['isBasedOn']
+    emoji           = CustomEmoji.find_by(shortcode: shortcode, domain: @account.domain)
 
     @shortcodes << shortcode unless emoji.nil?
 
     return unless emoji.nil? || image_url != emoji.image_remote_url || (updated && updated >= emoji.updated_at)
 
     emoji ||= CustomEmoji.new(domain: @account.domain, shortcode: shortcode, uri: uri)
+    emoji.copy_permission  = case copy_permission when 'allow', true, '1' then 'allow' when 'deny', false, '0' then 'deny' when 'conditional' then 'conditional' else 'none' end
+    emoji.license          = license
+    emoji.aliases          = aliases
+    emoji.usage_info       = usage_info
+    emoji.author           = author
+    emoji.description      = description
+    emoji.is_based_on      = is_based_on
     emoji.image_remote_url = image_url
+    emoji.updated_at       = updated   if updated
     emoji.save
   end
 

@@ -37,15 +37,17 @@ class MediaAttachment < ApplicationRecord
   enum type: [:image, :gifv, :video, :unknown, :audio]
   enum processing: [:queued, :in_progress, :complete, :failed], _prefix: true
 
+  ATTACHMENTS_LIMIT = 16
+
   MAX_DESCRIPTION_LENGTH = 1_500
 
-  IMAGE_LIMIT = 16.megabytes
+  IMAGE_LIMIT = 24.megabytes
   VIDEO_LIMIT = 99.megabytes
 
   MAX_VIDEO_MATRIX_LIMIT = 8_294_400 # 3840x2160px
   MAX_VIDEO_FRAME_RATE   = 120
 
-  IMAGE_FILE_EXTENSIONS = %w(.jpg .jpeg .png .gif .webp .heic .heif .avif).freeze
+  IMAGE_FILE_EXTENSIONS = %w(.jpg .jpeg .png .gif .webp .heic .heif .avif .bmp).freeze
   VIDEO_FILE_EXTENSIONS = %w(.webm .mp4 .m4v .mov).freeze
   AUDIO_FILE_EXTENSIONS = %w(.ogg .oga .mp3 .wav .flac .opus .aac .m4a .3gp .wma).freeze
 
@@ -54,10 +56,11 @@ class MediaAttachment < ApplicationRecord
     colors
     original
     small
+    tiny
   ).freeze
 
-  IMAGE_MIME_TYPES             = %w(image/jpeg image/png image/gif image/webp image/heif image/heic image/avif).freeze
-  IMAGE_CONVERTIBLE_MIME_TYPES = %w(image/heif image/heic).freeze
+  IMAGE_MIME_TYPES             = %w(image/jpeg image/png image/gif image/webp image/heif image/heic image/avif image/bmp).freeze
+  IMAGE_CONVERTIBLE_MIME_TYPES = %w(image/heif image/heic image/bmp).freeze
   VIDEO_MIME_TYPES             = %w(video/webm video/mp4 video/quicktime video/ogg).freeze
   VIDEO_CONVERTIBLE_MIME_TYPES = %w(video/webm video/quicktime).freeze
   AUDIO_MIME_TYPES             = %w(audio/wave audio/wav audio/x-wav audio/x-pn-wave audio/ogg audio/vorbis audio/mpeg audio/mp3 audio/webm audio/flac audio/aac audio/m4a audio/x-m4a audio/mp4 audio/3gpp video/x-ms-asf).freeze
@@ -75,16 +78,30 @@ class MediaAttachment < ApplicationRecord
 
     small: {
       format: 'webp',
+      content_type: 'image/webp',
+      pixels: 160_000, # 400x400px
       file_geometry_parser: FastGeometryParser,
-      convert_options: '-coalesce +profile exif -colorspace RGB -filter Lanczos -define filter:blur=.9891028367558475 -distort Resize 160000@ -colorspace sRGB -define webp:use-sharp-yuv=1',
     }.freeze,
 
     tiny: {
       format: 'webp',
+      content_type: 'image/webp',
+      pixels: 40_000, # 200x200px
       file_geometry_parser: FastGeometryParser,
-      convert_options: '-coalesce +profile exif -colorspace RGB -filter Lanczos -define filter:blur=.9891028367558475 -distort Resize 40000@ -colorspace sRGB -define webp:use-sharp-yuv=1',
       blurhash: BLURHASH_OPTIONS,
     }.freeze,
+  }.freeze
+
+  IMAGE_CONVERTED_STYLES = {
+    original: {
+      format: 'webp',
+      content_type: 'image/webp',
+      pixels: 8_294_400, # 3840x2160px
+      file_geometry_parser: FastGeometryParser,
+    }.freeze,
+
+    small: IMAGE_STYLES[:small].freeze,
+    tiny:  IMAGE_STYLES[:tiny].freeze,
   }.freeze
 
   VIDEO_FORMAT = {
@@ -132,7 +149,10 @@ class MediaAttachment < ApplicationRecord
           vf: 'thumbnail=n=100,scale=\'min(400\, iw):min(400\, ih)\':force_original_aspect_ratio=decrease',
         }.freeze,
       }.freeze,
-      format: 'png',
+      format: 'webp',
+      content_type: 'image/webp',
+      animated: false,
+      pixels: 160_000, # 400x400px
       file_geometry_parser: FastGeometryParser,
     }.freeze,
 
@@ -144,6 +164,9 @@ class MediaAttachment < ApplicationRecord
         }.freeze,
       }.freeze,
       format: 'webp',
+      content_type: 'image/webp',
+      animated: false,
+      pixels: 40_000, # 200x200px
       file_geometry_parser: FastGeometryParser,
       blurhash: BLURHASH_OPTIONS,
     }.freeze,
@@ -175,7 +198,7 @@ class MediaAttachment < ApplicationRecord
   }.freeze
 
   GLOBAL_CONVERT_OPTIONS = {
-    all: '-quality 90 +profile exif +set modify-date +set create-date',
+    all: '+profile "!icc,*" +set modify-date +set create-date -define webp:use-sharp-yuv=1 -define webp:emulate-jpeg-size=true -quality 90',
   }.freeze
 
   belongs_to :account,          inverse_of: :media_attachments, optional: true
@@ -224,8 +247,16 @@ class MediaAttachment < ApplicationRecord
     processing.present? && !processing_complete?
   end
 
+  def file_exists?
+    remote_resource_exists?(full_asset_url(file.url(:original)))
+  end
+
   def needs_redownload?
     file.blank? && remote_url.present?
+  end
+
+  def needs_reprocess?(version)
+    !file_meta.key?(version.to_s)
   end
 
   def larger_media_format?
@@ -293,6 +324,8 @@ class MediaAttachment < ApplicationRecord
     def file_styles(attachment)
       if attachment.instance.file_content_type == 'image/gif' || VIDEO_CONVERTIBLE_MIME_TYPES.include?(attachment.instance.file_content_type)
         VIDEO_CONVERTED_STYLES
+      elsif IMAGE_CONVERTIBLE_MIME_TYPES.include?(attachment.instance.file_content_type)
+        IMAGE_CONVERTED_STYLES
       elsif IMAGE_MIME_TYPES.include?(attachment.instance.file_content_type)
         IMAGE_STYLES
       elsif VIDEO_MIME_TYPES.include?(attachment.instance.file_content_type)
@@ -309,8 +342,6 @@ class MediaAttachment < ApplicationRecord
         [:transcoder, :blurhash_transcoder, :thumbhash_transcoder, :type_corrector]
       elsif AUDIO_MIME_TYPES.include?(instance.file_content_type)
         [:image_extractor, :transcoder, :type_corrector]
-      elsif IMAGE_CONVERTIBLE_MIME_TYPES.include?(instance.file_content_type)
-        [:img_converter, :lazy_thumbnail, :blurhash_transcoder, :thumbhash_transcoder, :type_corrector]
       else
         [:lazy_thumbnail, :blurhash_transcoder, :thumbhash_transcoder, :type_corrector]
       end
