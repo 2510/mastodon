@@ -52,7 +52,7 @@ class REST::CustomEmojiSerializer < ActiveModel::Serializer
   end
 
   def aliases?
-    object.aliases.present?
+    object.aliases&.compact&.present?
   end
 end
 
