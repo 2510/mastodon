@@ -39,6 +39,8 @@ class Status < ApplicationRecord
   include RateLimitable
   include Redisable
 
+  extend OrderAsSpecified
+
   rate_limit by: :account, family: :statuses
 
   self.discard_column = :deleted_at
@@ -342,6 +344,14 @@ class Status < ApplicationRecord
     @index_text ||= [spoiler_text, Formatter.instance.plaintext(self)].concat(media_attachments.map(&:description)).concat(preloadable_poll ? preloadable_poll.options : []).concat(quote? ? ["QT: [#{quote.url || ActivityPub::TagManager.instance.url_for(quote)}]"] : []).filter(&:present?).join("\n\n")
   end
 
+  def urls
+    Formatter.instance.extract_inner_link(self)
+  end
+
+  def reply_without_self?
+    in_reply_to_id.present? && in_reply_to_account_id != account_id
+  end
+
   def tag_id
     tags.map(&:id)
   end
@@ -380,6 +390,10 @@ class Status < ApplicationRecord
 
   def status_referred_by_count
     status_stat&.status_referred_by_count || 0
+  end
+
+  def safe?
+    non_sensitive_with_media? && spoiler_text.blank?
   end
 
   def account_ids(recursive: true)
@@ -577,7 +591,7 @@ class Status < ApplicationRecord
       end
     end
 
-    def from_text(text)
+    def from_0(text)
       return [] if text.blank?
 
       text.scan(FetchLinkCardService::URL_PATTERN).map(&:first).uniq.filter_map do |url|

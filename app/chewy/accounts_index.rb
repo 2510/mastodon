@@ -15,6 +15,10 @@ class AccountsIndex < Chewy::Index
         type: 'stemmer',
         language: 'possessive_english',
       },
+      search: {
+        type: 'sudachi_split',
+        mode: 'search',
+      },
     },
 
     char_filter: {
@@ -33,9 +37,11 @@ class AccountsIndex < Chewy::Index
         max_gram: 15,
       },
 
-      kuromoji_user_dict: {
-        type: 'kuromoji_tokenizer',
-        user_dictionary: 'userdic.txt',
+      sudachi_tokenizer: {
+        type: 'sudachi_tokenizer',
+        discard_punctuation: true,
+        resources_path: '/etc/elasticsearch/sudachi',
+        settings_path: '/etc/elasticsearch/sudachi/sudachi.json',
       },
 
       nori_user_dict: {
@@ -51,13 +57,16 @@ class AccountsIndex < Chewy::Index
       },
 
       ja_title: {
+        tokenizer: 'sudachi_tokenizer',
         type: 'custom',
-        char_filter: %w(
-          icu_normalizer
-          kuromoji_iteration_mark
+        filter: %w(
+          lowercase
+          cjk_width
+          sudachi_part_of_speech
+          sudachi_ja_stop
+          sudachi_baseform
+          search
         ),
-        tokenizer: 'kuromoji_user_dict',
-        filter: %w(lowercase asciifolding cjk_width),
       },
 
       ko_title: {
@@ -83,20 +92,15 @@ class AccountsIndex < Chewy::Index
       },
 
       ja_content: {
+        tokenizer: 'sudachi_tokenizer',
         type: 'custom',
-        char_filter: %w(
-          icu_normalizer
-          kuromoji_iteration_mark
-        ),
-        tokenizer: 'kuromoji_user_dict',
         filter: %w(
-          kuromoji_baseform
-          kuromoji_part_of_speech
-          ja_stop
-          kuromoji_stemmer
-          kuromoji_number
-          cjk_width
           lowercase
+          cjk_width
+          sudachi_part_of_speech
+          sudachi_ja_stop
+          sudachi_baseform
+          search
         ),
       },
 
