@@ -97,7 +97,7 @@ class SearchService < BaseService
     end
 
     result_ids        = definition.limit(@limit).offset(@offset).pluck(:id).compact
-    results           = Status.where(id: result_ids)
+    results           = Status.where(id: result_ids).order_as_specified(id: result_ids)
     account_ids       = results.map(&:account_id)
     account_relations = relations_map_for_account(@account, account_ids)
     status_relations  = relations_map_for_status(@account, results)

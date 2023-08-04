@@ -11,7 +11,7 @@ class SearchQueryTransformer < Parslet::Transform
       @must_not_clauses = grouped.fetch(:must_not, [])
       @must_clauses = grouped.fetch(:must, [])
       @filter_clauses = grouped.fetch(:filter, [])
-      @order_clauses = grouped.fetch(:order, [])
+      @order_clauses = grouped.fetch(:order, [PrefixClause.new('order', nil, 'desc')])
     end
 
     def apply(search)
@@ -48,7 +48,7 @@ class SearchQueryTransformer < Parslet::Transform
     def clause_to_order(clause)
       case clause
       when PrefixClause
-        { id: clause.term }
+        { created_at: clause.term }
       else
         raise "Unexpected clause type: #{clause}"
       end
@@ -107,7 +107,7 @@ class SearchQueryTransformer < Parslet::Transform
 
         @term = account.id
       when 'order'
-        raise "Unknown order: #{term}" unless %w(asc desc score).include?(term)
+        raise "Unknown order: #{term}" unless %w(asc desc).include?(term)
 
         @operator = :order
         @term = term

@@ -6,7 +6,7 @@ class TagSearchService < BaseService
     @offset  = options.delete(:offset).to_i
     @limit   = options.delete(:limit).to_i
     @lang    = options.delete(:language).to_s
-    @fields = ['name'].push(%w(ja ko zh).include?(@lang) ? "name.#{@lang}_stemmed" : 'name.edge_ngram')
+    @fields = ['name'].push(%w(ko zh).include?(@lang) ? "name.#{@lang}_stemmed" : 'name.edge_ngram')
     @options = options
 
     results   = from_elasticsearch if Chewy.enabled?

@@ -78,7 +78,7 @@ module Mastodon
         batch_size     = 1_000
         slice_size     = (batch_size / options[:concurrency]).ceil
 
-        index.adapter.default_scope.reorder(nil).find_in_batches(batch_size: batch_size) do |batch|
+        index.adapter.default_scope.reorder(nil).find_in_batches(batch_size: batch_size, order: :desc) do |batch|
           futures = []
 
           batch.each_slice(slice_size) do |records|
