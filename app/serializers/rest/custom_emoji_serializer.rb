@@ -36,7 +36,7 @@ class REST::CustomEmojiSerializer < ActiveModel::Serializer
   end
 
   def aliases
-    object.aliases
+    object.aliases&.compact
   end
 
   def width?
