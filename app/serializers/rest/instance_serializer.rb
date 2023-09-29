@@ -102,6 +102,14 @@ class REST::InstanceSerializer < ActiveModel::Serializer
       status_references: {
         max_references: StatusReferenceValidator::LIMIT,
       },
+
+      search: {
+        enabled: Chewy.enabled?,
+        supported_prefix: SearchQueryTransformer::SUPPORTED_PREFIXES,
+        supported_properties: SearchQueryTransformer::SUPPORTED_PROPERTIES,
+        supported_operator: SearchQueryTransformer::SUPPORTED_OPERATOR,
+        supported_order: SearchQueryTransformer::SUPPORTED_ORDER,
+      },
     }
   end
 
@@ -160,6 +168,7 @@ class REST::InstanceSerializer < ActiveModel::Serializer
       :bulk_get_api_for_accounts,
       :bulk_get_api_for_statuses,
       :sorted_custom_emojis,
+      :ordered_media_attachment,
     ]
 
     capabilities << :profile_search unless Chewy.enabled?

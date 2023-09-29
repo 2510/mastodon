@@ -47,7 +47,25 @@ class StatusesIndex < Chewy::Index
       },
     },
 
+    normalizer: {
+      generator_normalizer: {
+        filter: %w(
+          lowercase
+        ),
+      },
+      url_normalizer: {
+        filter: %w(
+          lowercase
+        ),
+      },
+    },
+
     analyzer: {
+      verbatim: {
+        tokenizer: 'uax_url_email',
+        filter: %w(lowercase),
+      },
+
       en_content: {
         tokenizer: 'uax_url_email',
         filter: %w(
@@ -62,6 +80,13 @@ class StatusesIndex < Chewy::Index
 
       ja_content: {
         filter: %w(
+          english_possessive_stemmer
+          asciifolding
+          cjk_width
+          sudachi_part_of_speech
+          sudachi_ja_stop
+          sudachi_baseform
+          search
           lowercase
           cjk_width
           sudachi_part_of_speech
@@ -97,10 +122,20 @@ class StatusesIndex < Chewy::Index
         ),
         char_filter: %w(tsconvert),
       },
+
+      hashtag: {
+        tokenizer: 'keyword',
+        filter: %w(
+          word_delimiter_graph
+          lowercase
+          asciifolding
+          cjk_width
+        ),
+      },
     },
   }
 
-  index_scope ::Status.unscoped.kept.without_reblogs.includes(:media_attachments, :preloadable_poll)
+  index_scope ::Status.include_expired.without_reblogs.with_includes
 
   crutch :mentions do |collection|
     data = ::Mention.where(status_id: collection.map(&:id)).where(account: Account.local, silent: false).pluck(:status_id, :account_id)
@@ -140,28 +175,22 @@ class StatusesIndex < Chewy::Index
   root date_detection: false do
     field :id, type: 'long'
     field :account_id, type: 'long'
-    field :domain, type: 'keyword', value: ->(status) { status.account_domain }
+    field :mentioned_account_id, type: 'long'
+    field :domain, type: 'keyword', value: ->(status) { status.account_domain || Rails.configuration.x.local_domain }
     field :created_at, type: 'date'
 
-    field :text, type: 'text', value: ->(status) { status.index_text } do
+    field :text, type: 'text', analyzer: 'verbatim', value: ->(status) { status.searchable_text } do
       field :en_stemmed, type: 'text', analyzer: 'en_content'
       field :ja_stemmed, type: 'text', analyzer: 'ja_content'
       field :ko_stemmed, type: 'text', analyzer: 'ko_content'
       field :zh_stemmed, type: 'text', analyzer: 'zh_content'
     end
 
-    field :reply, type: 'boolean', value: ->(status) { status.reply_without_self? }
-    field :quote, type: 'boolean', value: ->(status) { !!status.quote? }
-    field :poll, type: 'boolean', value: ->(status) { status.preloadable_poll.present? }
-    field :safe, type: 'boolean', value: ->(status) { status.safe? }
-    field :generator, type: 'keyword', value: ->(status) { status.generator&.name }
-
-    field :mentioned_account_id, type: 'long'
-    field :tag_id, type: 'long'
-    field :media_type, type: 'keyword'
-    field :reference_type, type: 'keyword'
     field :language, type: 'keyword'
-    field :urls, type: 'keyword'
+    field :tags, type: 'text', analyzer: 'hashtag', value: ->(status) { status.tags.map(&:display_name) }
+    field :urls, type: 'keyword', normalizer: 'url_normalizer'
+    field :properties, type: 'keyword', value: ->(status) { status.searchable_properties }
+    field :generator, type: 'keyword', normalizer: 'generator_normalizer', value: ->(status) {(status.account.local? ? status.application : status.generator)&.name.presence || 'none' }
 
     field :replies_count, type: 'long'
     field :reblogs_count, type: 'long'
@@ -169,7 +198,6 @@ class StatusesIndex < Chewy::Index
     field :emoji_reactions_count, type: 'long'
     field :status_referred_by_count, type: 'long'
 
-    field :visibility, type: 'keyword'
     field :searchable_by, type: 'long', value: ->(status, crutches) { status.searchable_by(crutches) }
     field :searchability, type: 'keyword', value: ->(status) { status.compute_searchability }
   end

@@ -3,11 +3,12 @@
 class StatusFilter
   attr_reader :status, :account
 
-  def initialize(status, account, preloaded_account_relations = {}, preloaded_status_relations = {})
+  def initialize(status, account, preloaded_account_relations = {}, preloaded_status_relations = {}, options = {})
     @status                      = status
     @account                     = account
     @preloaded_account_relations = preloaded_account_relations
     @preloaded_status_relations  = preloaded_status_relations
+    @options                     = options
   end
 
   def filtered?
@@ -30,7 +31,7 @@ class StatusFilter
   end
 
   def blocking_domain?
-    @preloaded_account_relations[:domain_blocking_by_domain] ? @preloaded_account_relations[:domain_blocking_by_domain][status.account_domain] : account.domain_blocking?(status.account_domain)
+    @preloaded_account_relations[:domain_blocking_by_domain] ? @preloaded_account_relations[:domain_blocking_by_domain][status.account_id] : account.domain_blocking?(status.account_domain)
   end
 
   def muting_account?
@@ -54,6 +55,10 @@ class StatusFilter
   end
 
   def policy_allows_show?
-    StatusPolicy.new(account, status, @preloaded_account_relations, @preloaded_status_relations).show?
+    if @options[:include_expired]
+      StatusPolicy.new(account, status, @preloaded_account_relations, @preloaded_status_relations).expired_show?
+    else
+      StatusPolicy.new(account, status, @preloaded_account_relations, @preloaded_status_relations).show?
+    end
   end
 end
