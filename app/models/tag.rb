@@ -52,6 +52,10 @@ class Tag < ApplicationRecord
     name
   end
 
+  def display_name
+    name
+  end
+
   def usable
     boolean_with_default('usable', true)
   end

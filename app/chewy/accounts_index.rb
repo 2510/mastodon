@@ -61,6 +61,7 @@ class AccountsIndex < Chewy::Index
         type: 'custom',
         filter: %w(
           lowercase
+          asciifolding
           cjk_width
           sudachi_part_of_speech
           sudachi_ja_stop
@@ -95,7 +96,9 @@ class AccountsIndex < Chewy::Index
         tokenizer: 'sudachi_tokenizer',
         type: 'custom',
         filter: %w(
+          english_possessive_stemmer
           lowercase
+          asciifolding
           cjk_width
           sudachi_part_of_speech
           sudachi_ja_stop
@@ -143,9 +146,9 @@ class AccountsIndex < Chewy::Index
 
     field :display_name, type: 'text', analyzer: 'title' do
       field :edge_ngram, type: 'text', analyzer: 'edge_ngram', search_analyzer: 'title'
-      field :ja_stemmed, type: 'text', analyzer: 'ja_title', search_analyzer: 'title'
-      field :ko_stemmed, type: 'text', analyzer: 'ko_title', search_analyzer: 'title'
-      field :zh_stemmed, type: 'text', analyzer: 'zh_title', search_analyzer: 'title'
+      field :ja_stemmed, type: 'text', analyzer: 'ja_title'
+      field :ko_stemmed, type: 'text', analyzer: 'ko_title'
+      field :zh_stemmed, type: 'text', analyzer: 'zh_title'
     end
 
     field :acct, type: 'text', analyzer: 'title', value: ->(account) { [account.username, account.domain].compact.join('@') } do
@@ -154,7 +157,7 @@ class AccountsIndex < Chewy::Index
 
     field :actor_type, type: 'keyword', normalizer: 'keyword'
 
-    field :text, type: 'text', value: ->(account) { account.index_text } do
+    field :text, type: 'text', value: ->(account) { account.searchable_text } do
       field :en_stemmed, type: 'text', analyzer: 'content'
       field :ja_stemmed, type: 'text', analyzer: 'ja_content'
       field :ko_stemmed, type: 'text', analyzer: 'ko_content'

@@ -42,7 +42,7 @@ export function submitSearch() {
       params: {
         q: value,
         resolve: true,
-        limit: 5,
+        limit: 11,
         with_profiles: true,
         compact: true,
       },
@@ -99,7 +99,7 @@ export function fetchSearchFail(error) {
 
 export const expandSearch = type => (dispatch, getState) => {
   const value  = getState().getIn(['search', 'value']);
-  const offset = getState().getIn(['search', 'results', type]).size;
+  const offset = getState().getIn(['search', 'results', type]).size - 1;
 
   dispatch(expandSearchRequest());
 
@@ -108,6 +108,7 @@ export const expandSearch = type => (dispatch, getState) => {
       q: value,
       type,
       offset,
+      limit: 11,
       with_profiles: true,
       compact: true,
     },

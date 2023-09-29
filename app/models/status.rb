@@ -3,30 +3,31 @@
 #
 # Table name: statuses
 #
-#  id                     :bigint(8)        not null, primary key
-#  uri                    :string
-#  text                   :text             default(""), not null
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
-#  in_reply_to_id         :bigint(8)
-#  reblog_of_id           :bigint(8)
-#  url                    :string
-#  sensitive              :boolean          default(FALSE), not null
-#  visibility             :integer          default("public"), not null
-#  spoiler_text           :text             default(""), not null
-#  reply                  :boolean          default(FALSE), not null
-#  language               :string
-#  conversation_id        :bigint(8)
-#  local                  :boolean
-#  account_id             :bigint(8)        not null
-#  application_id         :bigint(8)
-#  in_reply_to_account_id :bigint(8)
-#  poll_id                :bigint(8)
-#  deleted_at             :datetime
-#  quote_id               :bigint(8)
-#  expired_at             :datetime
-#  searchability          :integer
-#  generator_id           :bigint(8)
+#  id                           :bigint(8)        not null, primary key
+#  uri                          :string
+#  text                         :text             default(""), not null
+#  created_at                   :datetime         not null
+#  updated_at                   :datetime         not null
+#  in_reply_to_id               :bigint(8)
+#  reblog_of_id                 :bigint(8)
+#  url                          :string
+#  sensitive                    :boolean          default(FALSE), not null
+#  visibility                   :integer          default("public"), not null
+#  spoiler_text                 :text             default(""), not null
+#  reply                        :boolean          default(FALSE), not null
+#  language                     :string
+#  conversation_id              :bigint(8)
+#  local                        :boolean
+#  account_id                   :bigint(8)        not null
+#  application_id               :bigint(8)
+#  in_reply_to_account_id       :bigint(8)
+#  poll_id                      :bigint(8)
+#  deleted_at                   :datetime
+#  quote_id                     :bigint(8)
+#  expired_at                   :datetime
+#  searchability                :integer
+#  generator_id                 :bigint(8)
+#  ordered_media_attachment_ids :bigint(8)        is an Array
 #
 
 class Status < ApplicationRecord
@@ -143,6 +144,7 @@ class Status < ApplicationRecord
     end
   }
   scope :unset_searchability, -> { where(searchability: nil, reblog_of_id: nil) }
+  scope :indexable, -> { without_reblogs.where(visibility: :public).joins(:account).where(account: { indexable: true }) }
 
   cache_associated :application,
                    :media_attachments,
@@ -201,6 +203,24 @@ class Status < ApplicationRecord
     ids.uniq
   end
 
+  def searchable_properties
+    [].tap do |properties|
+      properties << 'image' if media_attachments.any?(&:image?)
+      properties << 'video' if media_attachments.any?(&:video?)
+      properties << 'audio' if media_attachments.any?(&:audio?)
+      properties << 'media' if with_media?
+      properties << 'poll' if with_poll?
+      properties << 'link' if with_preview_card?
+      properties << 'embed' if preview_cards.any?(&:video?)
+      properties << 'sensitive' if sensitive?
+      properties << 'reply' if reply?
+      properties << 'quote' if quote?
+      properties << 'ref' if ref?
+      properties << 'bot' if bot?
+      properties << visibility
+    end
+  end
+
   def compute_searchability
     searchability || Status.searchabilities.invert.fetch([Account.searchabilities[account.searchability], Status.visibilities[visibility] || 0].max, nil) || 'direct'
   end
@@ -243,6 +263,10 @@ class Status < ApplicationRecord
 
   def quote?
     !quote_id.nil? && quote
+  end
+
+  def ref?
+    references.present? && (!quote? || (references.map(&:url) - [quote.url])&.present?)
   end
 
   def emoji_reaction?
@@ -308,7 +332,15 @@ class Status < ApplicationRecord
   end
 
   def with_media?
-    media_attachments.any?
+    media_attachments.present?
+  end
+
+  def with_preview_card?
+    preview_cards.present?
+  end
+
+  def with_poll?
+    preloadable_poll.present?
   end
 
   def expired?
@@ -321,6 +353,14 @@ class Status < ApplicationRecord
 
   def expiry
     expires? && status_expire&.expires_mark? && status_expire&.expires_at || expired_at
+  end
+
+  def bookmarked?
+    bookmarks.present?
+  end
+
+  def bot?
+    account.bot?
   end
 
   def non_sensitive_with_media?
@@ -340,32 +380,30 @@ class Status < ApplicationRecord
     @emojis = CustomEmoji.from_text(fields.join(' '), account.domain) + (quote? ? CustomEmoji.from_text([quote.spoiler_text, quote.text].join(' '), quote.account.domain) : [])
   end
 
-  def index_text
-    @index_text ||= [spoiler_text, Formatter.instance.plaintext(self)].concat(media_attachments.map(&:description)).concat(preloadable_poll ? preloadable_poll.options : []).concat(quote? ? ["QT: [#{quote.url || ActivityPub::TagManager.instance.url_for(quote)}]"] : []).filter(&:present?).join("\n\n")
-  end
-
   def urls
-    Formatter.instance.extract_inner_link(self)
+    @urls ||= ProcessStatusReferenceService.new.call(self, urls: references.map(&:url), skip_process: true)
   end
 
-  def reply_without_self?
-    in_reply_to_id.present? && in_reply_to_account_id != account_id
-  end
-
-  def tag_id
-    tags.map(&:id)
+  def searchable_text
+    @searchable_text ||= [
+      spoiler_text.presence,
+      Formatter.instance.plaintext(self).gsub(Regexp.union(urls), ' '),
+      preloadable_poll ? preloadable_poll.options.join("\n\n") : nil,
+      media_attachments.map(&:description).join("\n\n"),
+    ].compact.join("\n\n")
   end
 
   def mentioned_account_id
     mentions.map(&:account_id)
   end
 
-  def media_type
-    media_attachments&.first&.type
-  end
-
-  def reference_type
-    preview_card&.type
+  def ordered_media_attachments
+    if ordered_media_attachment_ids.nil?
+      media_attachments
+    else
+      map = media_attachments.index_by(&:id)
+      ordered_media_attachment_ids.map { |media_attachment_id| map[media_attachment_id] }
+    end
   end
 
   def replies_count
@@ -415,7 +453,7 @@ class Status < ApplicationRecord
       emoji_reactions.filter do |emoji_reaction|
         if account.present?
           emoji_reaction['me'] = emoji_reaction['account_ids'].include?(account.id.to_s)
-          emoji_reaction['account_ids'] -= (account.excluded_from_timeline_account_ids + (Account.excluded_silenced_account_ids - [account.id])).uniq.map(&:to_s)
+          emoji_reaction['account_ids'] -= (account.excluded_from_timeline_account_ids + Account.where(id: emoji_reaction['account_ids'], domain: account.excluded_from_timeline_domains).pluck(:id) + (Account.excluded_silenced_account_ids - [account.id])).uniq.map(&:to_s)
         else
           emoji_reaction['me'] = false
           emoji_reaction['account_ids'] -= Account.excluded_silenced_account_ids.map(&:to_s)
