@@ -101,7 +101,11 @@ class AccountSearchQueryTransformer < Parslet::Transform
     end
 
     def to_query(field)
-      { match_phrase: { text: { query: @phrase } } }
+      if @phrase.is_a?(Array)
+        { bool: { must: { bool: { should: @phrase.map { |phrase| { match_phrase: { text: { query: phrase } } } }, minimum_should_match: 1 } } } }
+      else
+        { match_phrase: { text: { query: @phrase } } }
+      end
     end
   end
 
@@ -167,6 +171,8 @@ class AccountSearchQueryTransformer < Parslet::Transform
       TermClause.new(operator, clause[:term].to_s)
     elsif clause[:shortcode]
       TermClause.new(operator, ":#{clause[:term]}:")
+    elsif clause[:phrases]
+      PhraseClause.new(operator, clause[:phrases].map { |phrase| phrase[:phrase].is_a?(Array) ? phrase[:phrase].map { |p| p[:term].to_s }.join(' ') : clause[:phrase].to_s })
     elsif clause[:phrase]
       PhraseClause.new(operator, clause[:phrase].is_a?(Array) ? clause[:phrase].map { |p| p[:term].to_s }.join(' ') : clause[:phrase].to_s)
     else

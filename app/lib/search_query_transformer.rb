@@ -64,6 +64,17 @@ class SearchQueryTransformer < Parslet::Transform
     desc
   ).freeze
 
+  SUPPORTED_SEARCHABLITY_FILTER = %w(
+    all
+    library
+    public
+    unlisted
+    private
+    private_only
+    follow
+    direct
+  ).freeze
+
   class Query
     def initialize(clauses, options = {})
       raise ArgumentError if options[:current_account].nil?
@@ -76,13 +87,20 @@ class SearchQueryTransformer < Parslet::Transform
     end
   
     def request
+      searchability = @flags['in'] || @options[:searchability]
+
+      raise "No support searchability: #{searchability}" unless SUPPORTED_SEARCHABLITY_FILTER.include?(searchability)
+
       privacy_definition = StatusesIndex.filter(term: { searchable_by: @options[:current_account].id })
 
-      case @flags['in'] || @options[:searchability]
+      case searchability
       when 'public', 'all'
         privacy_definition = privacy_definition.or(StatusesIndex.filter(term: { searchability: 'public' }))
         privacy_definition = privacy_definition.or(StatusesIndex.filter(terms: { searchability: %w(unlisted private) }).filter(terms: { account_id: following_account_ids})) unless following_account_ids.empty?
       when 'unlisted', 'private'
+        privacy_definition = privacy_definition.or(StatusesIndex.filter(terms: { searchability: %w(public unlisted private) }).filter(terms: { account_id: following_account_ids})) unless following_account_ids.empty?
+      when 'private_only', 'follow'
+        privacy_definition = StatusesIndex.all
         privacy_definition = privacy_definition.or(StatusesIndex.filter(terms: { searchability: %w(public unlisted private) }).filter(terms: { account_id: following_account_ids})) unless following_account_ids.empty?
       end
 
@@ -188,7 +206,11 @@ class SearchQueryTransformer < Parslet::Transform
     end
 
     def to_query(field)
-      { match_phrase: { text: { query: @phrase } } }
+      if @phrase.is_a?(Array)
+        { bool: { must: { bool: { should: @phrase.map { |phrase| { match_phrase: { text: { query: phrase } } } }, minimum_should_match: 1 } } } }
+      else
+        { match_phrase: { text: { query: @phrase } } }
+      end
     end
   end
 
@@ -355,7 +377,9 @@ class SearchQueryTransformer < Parslet::Transform
     prefix   = clause[:prefix][:term].to_s if clause[:prefix]
     operator = clause[:operator]&.to_s
     term =
-      if clause[:phrase]
+      if clause[:phrases]
+        clause[:phrases].map { |phrase| phrase[:phrase].map { |phrase| phrase[:term].to_s }.join(' ') }
+      elsif clause[:phrase]
         clause[:phrase].map { |term| term[:term].to_s }.join(' ')
       elsif clause[:terms]
         clause[:terms].map { |term| term[:term].to_s }
@@ -371,7 +395,7 @@ class SearchQueryTransformer < Parslet::Transform
       OrderPrefixClause.new(prefix, operator, term, current_account: current_account)
     elsif clause[:prefix]
       TermClause.new(operator, "#{prefix} #{Array(term).join(' ')}")
-    elsif clause[:phrase]
+    elsif clause[:phrases] || clause[:phrase]
       PhraseClause.new(operator, term)
     elsif term.present?
       TermClause.new(operator, term)
