@@ -65,6 +65,8 @@ class REST::InstanceSerializer < ActiveModel::Serializer
         max_favourite_tags: FavouriteTag::LIMIT,
         max_featured_tags: FeaturedTag::LIMIT,
         max_profile_fields: Account::DEFAULT_FIELDS_SIZE,
+        max_display_name: LocalDisplayNameValidator::MAX_CHARS,
+        characters_reserved_per_emoji: LocalDisplayNameValidator::CUSTOM_EMOJI_PLACEHOLDER_CHARS,
       },
 
       statuses: {
@@ -109,6 +111,7 @@ class REST::InstanceSerializer < ActiveModel::Serializer
         supported_properties: SearchQueryTransformer::SUPPORTED_PROPERTIES,
         supported_operator: SearchQueryTransformer::SUPPORTED_OPERATOR,
         supported_order: SearchQueryTransformer::SUPPORTED_ORDER,
+        supported_searchablity_filter: SearchQueryTransformer::SUPPORTED_SEARCHABLITY_FILTER,
       },
     }
   end
