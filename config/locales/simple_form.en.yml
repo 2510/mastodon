@@ -108,11 +108,16 @@ en:
         setting_hide_following_from_yourself: Hide your following from you so you don't have to worry about who you're following. Doesn't affect references from other accounts
         setting_hide_joined_date_from_yourself: Hide the joined date from yourself so that you don't have to be aware of it (WebUI only). Doesn't affect references from other accounts
         setting_hide_link_preview: Hide the content preview card linked to the post
+        setting_hide_list_of_emoji_reactions_to_posts: Hide emoji reactions to posts so that no one can see who reacted to them
+        setting_hide_list_of_favourites_to_posts: Hide favourites for posts so that no one can see who favourited them
+        setting_hide_list_of_reblogs_to_posts: Hide boosts on posts so that no one can see who boosted them
+        setting_hide_list_of_referred_by_to_posts: Hide referred by on posts so that no one can see who referred by them
         setting_hide_network: Who you follow and who follows you will be hidden on your profile
         setting_hide_personal_from_account: Hide personal posts from the account post lists
         setting_hide_personal_from_timeline: Hide personal posts from the home and list timelines
         setting_hide_photo_preview: Hide the photo preview card linked to the post
         setting_hide_privacy_meta: Hide the description from the drop-down menu for selecting visibility, showing only the name
+        setting_hide_reaction_counter: Hide emoji reaction counter that appears on posts
         setting_hide_statuses_count: The number of post will be hidden in your profile
         setting_hide_video_preview: Hide the video preview card linked to the post
         setting_match_visibility_of_references: If the referenced post is private, default the visibility of the post to private behavior accordingly
@@ -320,11 +325,16 @@ en:
         setting_hide_following_from_yourself: Hide your following from yourself
         setting_hide_joined_date_from_yourself: Hide joined date from yourself
         setting_hide_link_preview: Hide preview card (link)
+        setting_hide_list_of_emoji_reactions_to_posts: Hide list of emoji reactions to posts
+        setting_hide_list_of_favourites_to_posts: Hide list of favourites to posts
+        setting_hide_list_of_reblogs_to_posts: Hide list of reblogs to posts
+        setting_hide_list_of_referred_by_to_posts: Hide list of referred by to posts
         setting_hide_network: Hide your social graph
         setting_hide_personal_from_account: Hide personal posts from account posts
         setting_hide_personal_from_timeline: Hide personal posts from the timeline
         setting_hide_photo_preview: Hide preview card (photo)
         setting_hide_privacy_meta: Hide visibility description
+        setting_hide_reaction_counter: Hide reactions counter
         setting_hide_statuses_count: Hide your post count
         setting_hide_video_preview: Hide preview card (video)
         setting_info_font_size: Information header font size

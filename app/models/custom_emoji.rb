@@ -24,7 +24,6 @@
 #  copy_permission              :integer          default(0), not null
 #  aliases                      :string           default([]), not null, is an Array
 #  meta                         :jsonb            default({}), not null
-#  combined_name                :text
 #
 
 class CustomEmoji < ApplicationRecord
@@ -34,7 +33,7 @@ class CustomEmoji < ApplicationRecord
   LIMIT       = [LOCAL_LIMIT, (ENV['MAX_REMOTE_EMOJI_SIZE'] || 256.kilobytes).to_i].max
   MAX_PIXELS  = 750_000 # 1500x500px
 
-  SHORTCODE_RE_FRAGMENT = '[a-zA-Z0-9_]{2,}'
+  SHORTCODE_RE_FRAGMENT = '[a-zA-Z0-9_]+'
 
   SCAN_RE = /(?<=[^[:alnum:]:]|\n|^)
     :(#{SHORTCODE_RE_FRAGMENT}):
@@ -56,12 +55,14 @@ class CustomEmoji < ApplicationRecord
 
   has_attached_file :image, styles: ->(f) { file_styles(f) }, processors: [:lazy_thumbnail], convert_options: GLOBAL_CONVERT_OPTIONS
 
+  before_validation :self_domain
   before_validation :downcase_domain
 
   validates_attachment :image, content_type: { content_type: IMAGE_MIME_TYPES }, presence: true
   validates_attachment_size :image, less_than: LIMIT, unless: :local?
   validates_attachment_size :image, less_than: LOCAL_LIMIT, if: :local?
-  validates :shortcode, uniqueness: { scope: :domain }, format: { with: /\A#{SHORTCODE_RE_FRAGMENT}\z/ }, length: { minimum: 2 }
+  validates :shortcode, uniqueness: { scope: :domain }, format: { with: /\A#{SHORTCODE_RE_FRAGMENT}\z/ }, length: { minimum: 1 }, unless: :local?
+  validates :shortcode, uniqueness: { scope: :domain }, format: { with: /\A#{SHORTCODE_RE_FRAGMENT}\z/ }, length: { minimum: 2 }, if: :local?
 
   scope :local, -> { where(domain: nil) }
   scope :remote, -> { where.not(domain: nil) }
@@ -123,6 +124,22 @@ class CustomEmoji < ApplicationRecord
     meta['is_based_on'] = val
   end
 
+  def sensitive
+    ActiveRecord::Type::Boolean.new.cast(meta['sensitive'])
+  end
+
+  def sensitive=(val)
+    meta['sensitive'] = ActiveRecord::Type::Boolean.new.cast(val)
+  end
+
+  def org_category
+    meta['org_category']
+  end
+
+  def org_category=(val)
+    meta['org_category'] = val
+  end
+
   def local?
     domain.nil?
   end
@@ -132,7 +149,7 @@ class CustomEmoji < ApplicationRecord
   end
 
   def copy!
-    copy = self.class.find_or_initialize_by(domain: nil, shortcode: shortcode)
+    copy = self.class.find_or_initialize_by(domain: nil, shortcode: shortcode) { |new_copy| new_copy.visible_in_picker = false }
     copy.image = image
     copy.width = self.width
     copy.height = self.height
@@ -141,6 +158,10 @@ class CustomEmoji < ApplicationRecord
     copy.aliases = self.aliases
     copy.meta = self.meta.merge({ is_based_on: self.uri })
     copy.tap(&:save!)
+  end
+
+  def fetch
+    ResolveURLService.new.call(uri) unless domain.nil?
   end
 
   class << self
@@ -154,8 +175,10 @@ class CustomEmoji < ApplicationRecord
       EntityCache.instance.emoji(shortcodes, domain)
     end
 
-    def search(shortcode)
-      where('"custom_emojis"."combined_name" ILIKE ?', "%#{shortcode}%")
+    def search(searchtext, type = :include)
+      prefix = %i(end_with include).include?(type) ? '%' : ''
+      suffix = %i(start_with include).include?(type) ? '%' : ''
+      where('custom_emojis.id IN (select distinct id from (select id, unnest(shortcode || aliases) as val from custom_emojis) e where val ilike :searchtext)', { searchtext: "#{prefix}#{searchtext}#{suffix}" })
     end
 
     private
@@ -204,6 +227,10 @@ class CustomEmoji < ApplicationRecord
 
   def remove_entity_cache
     Rails.cache.delete(EntityCache.instance.to_key(:emoji, shortcode, domain))
+  end
+
+  def self_domain
+    self.domain = nil if domain == Rails.configuration.x.local_domain
   end
 
   def downcase_domain

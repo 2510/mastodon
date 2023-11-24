@@ -70,7 +70,6 @@ class SearchQueryTransformer < Parslet::Transform
     public
     unlisted
     private
-    private_only
     follow
     direct
   ).freeze
@@ -91,17 +90,22 @@ class SearchQueryTransformer < Parslet::Transform
 
       raise "No support searchability: #{searchability}" unless SUPPORTED_SEARCHABLITY_FILTER.include?(searchability)
 
-      privacy_definition = StatusesIndex.filter(term: { searchable_by: @options[:current_account].id })
-
       case searchability
-      when 'public', 'all'
+      when 'all'
+        privacy_definition = StatusesIndex.filter(term: { searchable_by: @options[:current_account].id })
         privacy_definition = privacy_definition.or(StatusesIndex.filter(term: { searchability: 'public' }))
         privacy_definition = privacy_definition.or(StatusesIndex.filter(terms: { searchability: %w(unlisted private) }).filter(terms: { account_id: following_account_ids})) unless following_account_ids.empty?
       when 'unlisted', 'private'
+        privacy_definition = StatusesIndex.filter(term: { searchable_by: @options[:current_account].id })
         privacy_definition = privacy_definition.or(StatusesIndex.filter(terms: { searchability: %w(public unlisted private) }).filter(terms: { account_id: following_account_ids})) unless following_account_ids.empty?
-      when 'private_only', 'follow'
+      when 'public'
+        privacy_definition = StatusesIndex.all
+        privacy_definition = privacy_definition.or(StatusesIndex.filter(term: { searchability: 'public' }))
+      when 'follow'
         privacy_definition = StatusesIndex.all
         privacy_definition = privacy_definition.or(StatusesIndex.filter(terms: { searchability: %w(public unlisted private) }).filter(terms: { account_id: following_account_ids})) unless following_account_ids.empty?
+      else
+        privacy_definition = StatusesIndex.filter(term: { searchable_by: @options[:current_account].id })
       end
 
       mute_definition = StatusesIndex.filter.must_not({terms: {account_id: @options[:current_account].excluded_from_timeline_account_ids}}).filter.must_not({terms: {domain: @options[:current_account].excluded_from_timeline_domains}})

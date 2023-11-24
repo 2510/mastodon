@@ -380,6 +380,10 @@ class Status < ApplicationRecord
     @emojis = CustomEmoji.from_text(fields.join(' '), account.domain) + (quote? ? CustomEmoji.from_text([quote.spoiler_text, quote.text].join(' '), quote.account.domain) : [])
   end
 
+  def emojis_with_category
+    emojis.tap { |emojis| ActiveRecord::Associations::Preloader.new.preload(emojis, :category) }
+  end
+
   def urls
     @urls ||= ProcessStatusReferenceService.new.call(self, urls: references.map(&:url), skip_process: true)
   end
@@ -402,7 +406,7 @@ class Status < ApplicationRecord
       media_attachments
     else
       map = media_attachments.index_by(&:id)
-      ordered_media_attachment_ids.map { |media_attachment_id| map[media_attachment_id] }
+      ordered_media_attachment_ids.filter_map { |media_attachment_id| map[media_attachment_id] }
     end
   end
 
