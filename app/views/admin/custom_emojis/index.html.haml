@@ -47,15 +47,32 @@
       %li= filter_link_to t('admin.custom_emojis.license.unset'), license: '0'
       %li= filter_link_to t('admin.custom_emojis.license.set'), license: '1'
 
+  .filter-subset
+    %strong= t('admin.custom_emojis.order.title')
+    %ul
+      %li= filter_link_to t('admin.custom_emojis.order.alphabetic'), order: nil
+      %li= filter_link_to t('admin.custom_emojis.order.newer'), order: '0'
+      %li= filter_link_to t('admin.custom_emojis.order.older'), order: '1'
+
 = form_tag admin_custom_emojis_url, method: 'GET', class: 'simple_form' do
   .fields-group
     - CustomEmojiFilter::KEYS.each do |key|
       = hidden_field_tag key, params[key] if params[key].present?
 
-    - %i(shortcode by_domain category).each do |key|
+  .fields-row
+    .fields-group.fields-row__column.fields-row__column-8
+      .input.string.optional
+        = text_field_tag :shortcode, params[:shortcode], class: 'string optional', placeholder: I18n.t("admin.custom_emojis.shortcode")
+    .fields-group.fields-row__column.fields-row__column-4
+      .input.string.optional
+        = select_tag :shortcode_match_type, options_for_select(Form::CustomEmojiBatch::SHORTCODE_MATCH_TYPES.map { |shortcode_match_type| [I18n.t("admin.custom_emojis.shortcode_match_type.#{shortcode_match_type}"), shortcode_match_type]}, selected: params[:shortcode_match_type]), class: 'select optional', 'aria-label': t('admin.custom_emojis.shortcode_match_type.prompt')
+
+  .fields-group
+    - %i(by_domain category).each do |key|
       .input.string.optional
         = text_field_tag key, params[key], class: 'string optional', placeholder: I18n.t("admin.custom_emojis.#{key}")
 
+  .fields-group
     .actions
       %button.button= t('admin.accounts.search')
       = link_to t('admin.accounts.reset'), admin_custom_emojis_path, class: 'button negative'
@@ -81,6 +98,9 @@
         = f.button safe_join([fa_icon('power-off'), t('admin.custom_emojis.enable')]), name: :enable, class: 'table-action-link', type: :submit, data: { confirm: t('admin.reports.are_you_sure') }
 
         = f.button safe_join([fa_icon('power-off'), t('admin.custom_emojis.disable')]), name: :disable, class: 'table-action-link', type: :submit, data: { confirm: t('admin.reports.are_you_sure') }
+
+        - if params[:local] != '1' && can?(:fetch, :custom_emoji)
+          = f.button safe_join([fa_icon('refresh'), t('admin.custom_emojis.fetch')]), name: :fetch, class: 'table-action-link', type: :submit, data: { confirm: t('admin.reports.are_you_sure') }
 
         - if can?(:destroy, :custom_emoji)
           = f.button safe_join([fa_icon('times'), t('admin.custom_emojis.delete')]), name: :delete, class: 'table-action-link', type: :submit, data: { confirm: t('admin.reports.are_you_sure') }

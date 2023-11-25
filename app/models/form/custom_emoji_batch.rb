@@ -10,6 +10,7 @@ class Form::CustomEmojiBatch
                 :keyword_action, :keyword_action_value,
                 :description, :author, :copy_permission, :license, :usage_info
 
+  SHORTCODE_MATCH_TYPES   = %w(include start_with end_with match)
   KEYWORD_ACTIONS         = %w(apend prepend remove overwrite)
   LICENSE_ACTIONS         = %w(apend prepend remove overwrite)
   COPY_PERMISSION_ACTIONS = %w(prompt none allow deny conditional)
@@ -30,6 +31,8 @@ class Form::CustomEmojiBatch
       copy!
     when 'delete'
       delete!
+    when 'fetch'
+      fetch!
     end
   end
 
@@ -134,6 +137,15 @@ class Form::CustomEmojiBatch
     custom_emojis.each do |custom_emoji|
       custom_emoji.destroy
       log_action :destroy, custom_emoji
+    end
+  end
+
+  def fetch!
+    custom_emojis.each { |custom_emoji| authorize(custom_emoji, :fetch?) }
+
+    custom_emojis.each do |custom_emoji|
+      custom_emoji.fetch
+      log_action :fetch, custom_emoji
     end
   end
 end

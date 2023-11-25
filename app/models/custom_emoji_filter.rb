@@ -9,7 +9,9 @@ class CustomEmojiFilter
     license
     category
     by_domain
+    shortcode_match_type
     shortcode
+    order
   ).freeze
 
   attr_reader :params
@@ -62,8 +64,17 @@ class CustomEmojiFilter
       end
     when 'by_domain'
       CustomEmoji.where(domain: value.strip.downcase)
+    when 'shortcode_match_type'
+      @shortcode_match_type = value.to_sym if Form::CustomEmojiBatch::SHORTCODE_MATCH_TYPES.include?(value)
+      CustomEmoji.all
     when 'shortcode'
-      CustomEmoji.search(value.strip)
+      CustomEmoji.search(value.strip, @shortcode_match_type)
+    when 'order'
+      if value == '0'
+        CustomEmoji.reorder(updated_at: :desc)
+      elsif value == '1'
+        CustomEmoji.reorder(updated_at: :asc)
+      end
     else
       raise "Unknown filter: #{key}"
     end

@@ -397,6 +397,7 @@ en:
       enable: Enable
       enabled: Enabled
       enabled_msg: Successfully enabled that emoji
+      fetch: Refetch
       go_to_index: Go to index
       image_hint: PNG up to 50KB
       keyword_action:
@@ -426,8 +427,17 @@ en:
       overwrite: Overwrite
       save_changes: Save changes
       save_changes_and_next: Save changes and next
+      sensitive:
+        hint: Mark emojis that need to be handled with care
+        title: Sensitive
       shortcode: Shortcode
       shortcode_hint: At least 2 characters, only alphanumeric characters and underscores
+      shortcode_match_type:
+        end_with: End with
+        include: Include
+        match: Match
+        prompt: Select Match Type
+        start_with: Start with
       title: Custom emojis
       uncategorized: Uncategorized
       unlist: Unlist
@@ -1399,10 +1409,10 @@ en:
     too_soon: The scheduled date must be in the future
   search:
     searchabilities:
-      direct: Reacted-users-only
+      direct: Reacted-posts-only
       direct_long: Only search to own or reacted posts
-      private: Followers-only
-      private_long: Only search to own or followers or reacted posts
+      private: Follows-and-reaced-posts
+      private_long: Only search to own or follows or reacted posts
       public: Public
       public_long: Everyone can search
   server_directories:

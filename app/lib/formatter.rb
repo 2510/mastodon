@@ -115,7 +115,7 @@ class Formatter
   end
 
   def format_field(account, str, **options)
-    html = account.local? ? encode_and_link_urls(str, me: true, with_domain: true) : reformat(str)
+    html = account.local? ? encode_and_link_urls(str, me: true, with_domain: true) : apply_inner_link(reformat(str))
     html = encode_custom_emojis(html, account.emojis, options[:autoplay]) if options[:custom_emojify]
     html.html_safe # rubocop:disable Rails/OutputSafety
   end
@@ -143,6 +143,21 @@ class Formatter
 
   def extract_inner_link(status)
     Nokogiri::HTML.parse(format(status), nil, 'utf-8').css('a:not(.mention):not(.unhandled-link)').map { |x| x['href'].presence }.compact.uniq
+  end
+
+  def remove_misskey_quote_link(html)
+    tree     = Nokogiri::HTML.fragment(html)
+    children = tree.children.size == 1 ? tree.child.children : tree.children
+
+    if children.size >= 2 && children[-1].name == 'a' && children[-2].children[-1].class.name == 'Nokogiri::XML::Text' && children[-2].children[-1].content == 'RE: '
+      children[-2].children[-1].unlink
+      children[-2].children[-1].unlink if children[-2].children[-1]&.name == 'br'
+      children[-2].children[-1].unlink if children[-2].children[-1]&.name == 'br'
+      children[-2].unlink if children[-2].children.size == 0
+      children[-1].unlink
+    end
+
+    tree.to_html.html_safe
   end
 
   private

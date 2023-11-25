@@ -7,13 +7,22 @@ class StatusesSearchService < BaseService
       @options       = options
       @limit         = options[:limit].to_i
       @offset        = options[:offset].to_i
-      @searchability = options[:searchability] || @account.user&.setting_default_search_searchability || 'private'
+      @searchability = options[:searchability] || convert_in_param(@account&.user&.setting_default_search_searchability) || 'private'
   
       convert_deprecated_options!
       status_search_results
     end
   
     private
+
+    def convert_in_param(searchability)
+      case searchability
+      when 'public'
+        'all'
+      else
+        searchability
+      end
+    end
   
     def status_search_results
       request           = parsed_query.request
