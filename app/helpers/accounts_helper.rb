@@ -118,6 +118,17 @@ module AccountsHelper
     end.join("\n")
   end
 
+  def emoji_size_css(size)
+    case size
+    when 'standard'
+      '1'
+    when 'middle'
+      'calc(var(--emoji-scale, 1) / 3 + 0.67)'
+    when 'large'
+      'var(--emoji-scale, 1)'
+    end
+  end
+
   def account_theme_valiables(account)
     user = account&.user&.setting_theme_public && account&.user || current_user
 
@@ -128,7 +139,13 @@ module AccountsHelper
       --content-font-size: #{h(user&.setting_content_font_size || Setting.default_settings['content_font_size'])}px;
       --info-font-size: #{h(user&.setting_info_font_size || Setting.default_settings['info_font_size'])}px;
       --content-emoji-reaction-size: #{h(user&.setting_content_emoji_reaction_size || Setting.default_settings['content_emoji_reaction_size'])}px;
+      --composer-font-size: #{h(user&.setting_composer_font_size || Setting.default_settings['composer_font_size'])}px;
+      --composer-min-height: #{h(user&.setting_composer_min_height || Setting.default_settings['composer_min_height'])}px;
       --emoji-scale: #{h(user&.setting_emoji_scale || Setting.default_settings['emoji_scale'])};
+      --emoji-scale-single: #{emoji_size_css(user&.setting_emoji_size_in_single || Setting.default_settings['emoji_size_in_single'])};
+      --emoji-scale-multi: #{emoji_size_css(user&.setting_emoji_size_in_multi || Setting.default_settings['emoji_size_in_multi'])};
+      --emoji-scale-mix: #{emoji_size_css(user&.setting_emoji_size_in_mix || Setting.default_settings['emoji_size_in_mix'])};
+      --emoji-scale-other: #{emoji_size_css(user&.setting_emoji_size_in_other || Setting.default_settings['emoji_size_in_other'])};
     }
     EOS
 

@@ -40,9 +40,11 @@ module Admin
     def update
       return redirect_to admin_custom_emojis_path(filter_params) if params[:go_to_index]
 
+      next_id = next_id(@custom_emoji.id)
+
       if @custom_emoji.update(resource_params)
-        if params[:update_and_next] && (id = filtered_custom_emojis.where(domain: @custom_emoji.domain..).where('shortcode > ?', @custom_emoji.shortcode).take&.id)
-          redirect_to edit_admin_custom_emoji_path(id, filter_params), notice: I18n.t('admin.custom_emojis.updated_msg')
+        if params[:update_and_next] && !next_id.nil?
+          redirect_to edit_admin_custom_emoji_path(next_id, filter_params), notice: I18n.t('admin.custom_emojis.updated_msg')
         else
           redirect_to admin_custom_emojis_path(filter_params), notice: I18n.t('admin.custom_emojis.updated_msg')
         end
@@ -80,6 +82,10 @@ module Admin
 
     def filter_params
       params.slice(:page, *CustomEmojiFilter::KEYS).permit(:page, *CustomEmojiFilter::KEYS)
+    end
+
+    def next_id(id)
+      ActiveRecord::Base.connection.select_value(ActiveRecord::Base.sanitize_sql_array(["select next_id from (#{filtered_custom_emojis.select("custom_emojis.id, lead(custom_emojis.id) over (order by #{case filter_params['order'] when '0' then 'custom_emojis.updated_at desc' when '1' then 'custom_emojis.updated_at' else 'custom_emojis.domain, custom_emojis.shortcode' end}) as next_id").to_sql}) c1 where c1.id = :id", id: id]))
     end
 
     def action_from_button

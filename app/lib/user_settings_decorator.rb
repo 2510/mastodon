@@ -113,7 +113,8 @@ class UserSettingsDecorator
     hide_list_of_emoji_reactions_to_posts
     hide_list_of_favourites_to_posts
     hide_list_of_reblogs_to_posts
-    hide_list_of_referred_by_to_posts    
+    hide_list_of_referred_by_to_posts
+    hide_reblogged_by
   ).freeze
 
   STRING_KEYS = %w(
@@ -126,7 +127,13 @@ class UserSettingsDecorator
     content_font_size
     info_font_size
     content_emoji_reaction_size
+    composer_font_size
+    composer_min_height
     emoji_scale
+    emoji_size_in_single
+    emoji_size_in_multi
+    emoji_size_in_mix
+    emoji_size_in_other
     picker_emoji_size
     default_search_searchability
     default_column_width

@@ -139,7 +139,9 @@ class User < ApplicationRecord
            :enable_status_reference, :match_visibility_of_references,
            :post_reference_modal, :add_reference_modal, :unselect_reference_modal, :delete_scheduled_status_modal,
            :hexagon_avatar, :enable_empty_column,
-           :content_font_size, :info_font_size, :content_emoji_reaction_size, :emoji_scale, :picker_emoji_size,
+           :content_font_size, :info_font_size, :content_emoji_reaction_size, :picker_emoji_size,
+           :emoji_scale, :emoji_size_in_single, :emoji_size_in_multi, :emoji_size_in_mix, :emoji_size_in_other,       
+           :composer_font_size, :composer_min_height,
            :enable_wide_emoji, :enable_wide_emoji_reaction,
            :hide_bot_on_public_timeline, :confirm_follow_from_bot,
            :default_search_searchability, :default_expires_in, :default_expires_action,
@@ -151,6 +153,7 @@ class User < ApplicationRecord
            :unlocked_for_official_app, :use_low_resolution_thumbnails, :use_fullsize_avatar_on_detail, :use_fullsize_header_on_detail,
            :hide_following_from_yourself, :hide_followers_from_yourself, :hide_joined_date_from_yourself, :hide_reaction_counter,
            :hide_list_of_emoji_reactions_to_posts, :hide_list_of_favourites_to_posts, :hide_list_of_reblogs_to_posts, :hide_list_of_referred_by_to_posts,    
+           :hide_reblogged_by,
 
            to: :settings, prefix: :setting, allow_nil: false
 
