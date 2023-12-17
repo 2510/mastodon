@@ -79,6 +79,10 @@ class InitialStateSerializer < ActiveModel::Serializer
       store[:info_font_size]                        = object.current_account.user.setting_info_font_size
       store[:content_emoji_reaction_size]           = object.current_account.user.setting_content_emoji_reaction_size
       store[:emoji_scale]                           = object.current_account.user.setting_emoji_scale
+      store[:emoji_size_in_single]                  = object.current_account.user.setting_emoji_size_in_single
+      store[:emoji_size_in_multi]                   = object.current_account.user.setting_emoji_size_in_multi
+      store[:emoji_size_in_mix]                     = object.current_account.user.setting_emoji_size_in_mix
+      store[:emoji_size_in_other]                   = object.current_account.user.setting_emoji_size_in_other
       store[:picker_emoji_size]                     = object.current_account.user.setting_picker_emoji_size
       store[:enable_wide_emoji]                     = object.current_account.user.setting_enable_wide_emoji
       store[:enable_wide_emoji_reaction]            = object.current_account.user.setting_enable_wide_emoji_reaction
@@ -113,6 +117,8 @@ class InitialStateSerializer < ActiveModel::Serializer
       store[:hide_list_of_favourites_to_posts]      = object.current_account.user.setting_hide_list_of_favourites_to_posts
       store[:hide_list_of_reblogs_to_posts]         = object.current_account.user.setting_hide_list_of_reblogs_to_posts
       store[:hide_list_of_referred_by_to_posts]     = object.current_account.user.setting_hide_list_of_referred_by_to_posts
+      store[:hide_reblogged_by]                     = object.current_account.user.setting_hide_reblogged_by
+      
     else
       store[:auto_play_gif] = Setting.auto_play_gif
       store[:display_media] = Setting.display_media
