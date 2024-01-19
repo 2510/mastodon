@@ -499,11 +499,12 @@ class Formatter
   end
 
   def link_html(url)
-    url    = Addressable::URI.unencode(Addressable::URI.parse(url).to_s)
-    prefix = url.match(/\A(https?:\/\/(www\.)?|xmpp:)/).to_s
-    text   = url[prefix.length, 30]
-    suffix = url[prefix.length + 30..-1]
-    cutoff = url[prefix.length..-1].length > 30
+    decoded_url = Addressable::URI.unencode(Addressable::URI.parse(url).to_s)
+    url         = decoded_url if decoded_url.valid_encoding?
+    prefix      = url.match(/\A(https?:\/\/(www\.)?|xmpp:)/).to_s
+    text        = url[prefix.length, 30]
+    suffix      = url[prefix.length + 30..-1]
+    cutoff      = url[prefix.length..-1].length > 30
 
     "<span class=\"invisible\">#{encode(prefix)}</span><span class=\"#{cutoff ? 'ellipsis' : ''}\">#{encode(text)}</span><span class=\"invisible\">#{encode(suffix)}</span>"
   end
