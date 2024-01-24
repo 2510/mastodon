@@ -97,6 +97,8 @@ class ActivityPub::Activity
   def distribute(status)
     crawl_links(status)
 
+    return unless @options[:delivery]
+
     notify_about_reblog(status) if reblog_of_local_account?(status) && !reblog_by_following_group_account?(status)
     notify_about_mentions(status)
 

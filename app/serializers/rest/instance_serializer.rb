@@ -67,11 +67,12 @@ class REST::InstanceSerializer < ActiveModel::Serializer
         max_profile_fields: Account::DEFAULT_FIELDS_SIZE,
         max_display_name: LocalDisplayNameValidator::MAX_CHARS,
         characters_reserved_per_emoji: LocalDisplayNameValidator::CUSTOM_EMOJI_PLACEHOLDER_CHARS,
+        max_status_pins: StatusPinValidator::LIMIT,
       },
 
       statuses: {
         max_characters: StatusLengthValidator::MAX_CHARS,
-        max_media_attachments: 4,
+        max_media_attachments: Setting.attachments_max,
         characters_reserved_per_url: StatusLengthValidator::URL_PLACEHOLDER_CHARS,
         min_expiration: TimeLimit::VALID_DURATION.min,
         max_expiration: TimeLimit::VALID_DURATION.max,
