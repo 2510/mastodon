@@ -22,9 +22,9 @@ class ActivityPub::FetchReferencesService < BaseService
       items = begin
         case collection['type']
         when 'Collection', 'CollectionPage'
-          collection['items']
+          as_array(collection['items'].presence || collection['orderedItems'].presence || [])
         when 'OrderedCollection', 'OrderedCollectionPage'
-          collection['orderedItems']
+          as_array(collection['orderedItems'].presence || collection['items'].presence || [])
         end
       end
 

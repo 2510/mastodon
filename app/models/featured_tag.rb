@@ -47,6 +47,11 @@ class FeaturedTag < ApplicationRecord
     update(statuses_count: [0, statuses_count - 1].max, last_status_at: account.statuses.where(visibility: %i(public unlisted)).tagged_with(tag).where.not(id: deleted_status_id).select(:created_at).first&.created_at)
   end
 
+  def recount
+    reset_data
+    save
+  end
+
   private
 
   def set_tag

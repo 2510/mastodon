@@ -193,6 +193,13 @@ Rails.application.routes.draw do
   resources :generators, only: [:show]
   resource :relationships, only: [:show, :update]
   resource :statuses_cleanup, controller: :statuses_cleanup, only: [:show, :update]
+  resource :first_aid, controller: :first_aid, only: [:show] do
+    post :reset_server_settings
+    post :reset_web_settings
+    post :reset_frequently_used_emojis
+    post :reset_counters
+    post :reset_home_feed
+  end
 
   get '/public', to: 'public_timelines#show', as: :public_timeline
   get '/media_proxy/:id/(*any)', to: 'media_proxy#show', as: :media_proxy, format: false
@@ -287,6 +294,14 @@ Rails.application.routes.draw do
         member do
           post :promote
           post :demote
+        end
+      end
+
+      resource :priority, only: [] do
+        member do
+          post :default
+          post :high
+          post :low
         end
       end
     end

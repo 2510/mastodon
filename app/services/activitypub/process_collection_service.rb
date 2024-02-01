@@ -28,9 +28,9 @@ class ActivityPub::ProcessCollectionService < BaseService
 
     case @json['type']
     when 'Collection', 'CollectionPage'
-      process_items @json['items']
+      process_items as_array(@json['items'].presence || @json['orderedItems'].presence || [])
     when 'OrderedCollection', 'OrderedCollectionPage'
-      process_items @json['orderedItems']
+      process_items as_array(@json['orderedItems'].presence || @json['items'].presence || [])
     else
       process_items [@json]
     end
@@ -61,7 +61,7 @@ class ActivityPub::ProcessCollectionService < BaseService
   end
 
   def process_item(item)
-    activity = ActivityPub::Activity.factory(item, @account, **@options)
+    activity = ActivityPub::Activity.factory(item, @account, **@options.merge(delivery: true))
     activity&.perform
   end
 
