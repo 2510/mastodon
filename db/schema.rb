@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_01_07_172819) do
+ActiveRecord::Schema.define(version: 2024_02_01_030756) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -214,6 +214,7 @@ ActiveRecord::Schema.define(version: 2024_01_07_172819) do
     t.string "avatar_thumbhash"
     t.string "header_thumbhash"
     t.boolean "indexable", default: false, null: false
+    t.integer "priority", default: 0, null: false
     t.index "(((setweight(to_tsvector('simple'::regconfig, (display_name)::text), 'A'::\"char\") || setweight(to_tsvector('simple'::regconfig, (username)::text), 'B'::\"char\")) || setweight(to_tsvector('simple'::regconfig, (COALESCE(domain, ''::character varying))::text), 'C'::\"char\")))", name: "search_index", using: :gin
     t.index "lower((username)::text), COALESCE(lower((domain)::text), ''::text)", name: "index_accounts_on_username_and_domain_lower", unique: true
     t.index ["moved_to_account_id"], name: "index_accounts_on_moved_to_account_id"
@@ -1103,6 +1104,15 @@ ActiveRecord::Schema.define(version: 2024_01_07_172819) do
     t.float "max_score"
     t.datetime "max_score_at"
     t.index "lower((name)::text) text_pattern_ops", name: "index_tags_on_name_lower_btree", unique: true
+  end
+
+  create_table "tag_account_mutes", force: :cascade do |t|
+    t.bigint "tag_id"
+    t.bigint "account_id"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["account_id"], name: "index_tag_account_mutes_on_account_id"
+    t.index ["tag_id"], name: "index_tag_account_mutes_on_tag_id"
   end
 
   create_table "tombstones", force: :cascade do |t|

@@ -82,11 +82,14 @@ class PostStatusService < BaseService
   def preprocess_attributes!
     @sensitive      = (@options[:sensitive].nil? ? @account.user&.setting_default_sensitive : @options[:sensitive]) || @options[:spoiler_text].present?
     @text           = @options.delete(:spoiler_text) if @text.blank? && @options[:spoiler_text].present?
-    @visibility     = @options[:visibility] || @account.user&.setting_default_privacy
-    @visibility     = :unlisted if @visibility&.to_sym == :public && @account.silenced?
-    @visibility     = :private if %i(public unlisted).include?(@visibility&.to_sym) && @account.hard_silenced?
-    @visibility     = :limited if @circle.present?
-    @visibility     = :limited if @visibility&.to_sym != :direct && @in_reply_to&.limited_visibility?
+
+    @visibility       = (@options[:visibility] || @account.user&.setting_default_privacy)&.to_sym
+    if @visibility != :personal
+      @visibility     = :unlisted if @visibility == :public                    && @account.silenced?
+      @visibility     = :private  if %i(public unlisted).include?(@visibility) && @account.hard_silenced?
+      @visibility     = :limited  if @circle.present? || @visibility != :direct && @in_reply_to&.limited_visibility?
+    end
+
     @searchability  = searchability
     @scheduled_at   = @options[:scheduled_at].is_a?(Time) ? @options[:scheduled_at] : @options[:scheduled_at]&.to_datetime&.to_time
     if @quote_id.nil? && md = @text.match(/QT:\s*\[\s*(https:\/\/.+?)\s*\]/)
@@ -150,7 +153,9 @@ class PostStatusService < BaseService
   end
 
   def postprocess_status!
-    DistributionWorker.perform_async(@status.id)
+    @account.high_priority? ?
+      PriorityDistributionWorker.perform_async(@status.id) :
+      DistributionWorker.perform_async(@status.id)
     ActivityPub::DistributionWorker.perform_async(@status.id) unless @status.personal_visibility?
     PollExpirationNotifyWorker.perform_at(@status.poll.expires_at, @status.poll.id) if @status.poll
     @status.status_expire.queue_action if expires_soon?

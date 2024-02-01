@@ -55,6 +55,7 @@ class ActivityPub::Activity::Announce < ActivityPub::Activity
         visibility: visibility_from_audience_with_correction,
         expires_at: @json['expiry'],
         expires_action: :mark,
+        fetch: !@options[:delivery],
       }
     end
   end
