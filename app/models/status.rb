@@ -151,22 +151,22 @@ class Status < ApplicationRecord
                    :conversation,
                    :status_stat,
                    :status_expire,
-                   :tags,
                    :preview_cards,
                    :preloadable_poll,
                    :generator,
+                   tags: [:tag_account_mute_relationships],
                    references: { account: :account_stat },
                    account: [:account_stat, :user],
                    active_mentions: { account: :account_stat },
                    reblog: [
                      :application,
-                     :tags,
                      :preview_cards,
                      :media_attachments,
                      :conversation,
                      :status_stat,
                      :status_expire,
                      :preloadable_poll,
+                     tags: [:tag_account_mute_relationships],
                      references: { account: :account_stat },
                      account: [:account_stat, :user],
                      active_mentions: { account: :account_stat },
@@ -222,27 +222,31 @@ class Status < ApplicationRecord
   end
 
   def compute_searchability
-    searchability || Status.searchabilities.invert.fetch([Account.searchabilities[account.searchability], Status.visibilities[visibility] || 0].max, nil) || 'direct'
+    searchability || Status.searchabilities.invert.fetch([Account.searchabilities[account.searchability], Status.visibilities[compatible_visibility] || 0].max, nil) || 'direct'
   end
 
   def standard_visibility?
     STANDARD_VISIBILITY.include?(visibility)
   end
-  
+
   def follower_visibility?
     FOLLOWER_VISIBILITY.include?(visibility)
   end
-  
+
   def extra_visibility?
     EXTRA_VISIBILITY.include?(visibility)
   end
-  
+
   def pseudo_visibility?
     PSEUDO_VISIBILITY.include?(visibility)
   end
-  
+
   def uncount_visibility?
     UNCOUNT_VISIBILITY.include?(visibility)
+  end
+
+  def compatible_visibility
+    account.node&.info&.fetch('upstream_name', '') == 'misskey' && unlisted_visibility? ? 'public' : visibility
   end
 
   def reply?
@@ -749,6 +753,7 @@ class Status < ApplicationRecord
   def increment_counter_caches
     return if uncount_visibility?
 
+    account&.touch_count!(:statuses_count) if fetch
     account&.increment_count!(:statuses_count) unless fetch
     reblog&.increment_count!(:reblogs_count) if reblog?
     thread&.increment_count!(:replies_count) if in_reply_to_id.present? && distributable?

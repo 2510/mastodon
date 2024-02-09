@@ -73,21 +73,21 @@ class UpdateNodeService < BaseService
 
     if build.blank?
       {
-        'upstream_name'    => nodeinfo('metadata', 'upstream', 'name')&.downcase || Node.upstream(software) || software,
+        'upstream_name'    => nodeinfo('metadata', 'upstream', 'name')&.downcase || Node.upstreams(software) || software,
         'upstream_version' => nodeinfo('metadata', 'upstream', 'version') || core,
         'software_name'    => software,
         'software_version' => core,
       }
     elsif /^[\d\.]$/i.match?(build)
       {
-        'upstream_name'    => Node.upstream(software) || software,
+        'upstream_name'    => Node.upstreams(software) || software,
         'upstream_version' => build,
         'software_name'    => software,
         'software_version' => core,
       }
     else
       {
-        'upstream_name'    => Node.upstream(software) || software,
+        'upstream_name'    => Node.upstreams(software) || software,
         'upstream_version' => core,
         'software_name'    => software,
         'software_version' => version,
@@ -116,12 +116,17 @@ class UpdateNodeService < BaseService
       'languages'         => info('languages').presence || instance('languages').presence || instance('langs').presence || [],
       'registrations'     => nodeinfo('openRegistrations') || (instance('registrations').is_a?(Hash) ? instance('registrations', 'enabled') : instance('registrations')) || instance('features', 'registration'),
       'approval_required' => instance('registrations').is_a?(Hash) ? instance('registrations', 'approval_required') : nil,
-      'total_users'       => nodeinfo('usage', 'users', 'total') || instance('stats', 'user_count'),
+      'total_users'       => nodeinfo('usage', 'users', 'total') || instance('stats', 'user_count') || Instance.find(@domain)&.accounts_count,
       'last_week_users'   => nodeinfo('usage', 'users', 'activeMonth') || instance('usage', 'users', 'active_month') || instance('pleroma', 'stats', 'mau'),
+      'last_week_active_users_in_cache' => last_week_users_local,
       'name'              => nodeinfo('metadata', 'nodeName').presence || instance('name').presence || instance('title').presence || instance('name').presence,
       'url'               => full_uri(instance('domain').presence || instance('uri').presence || @domain),
       'theme_color'       => nodeinfo('metadata', 'themeColor').presence || instance('themeColor').presence,
     })
+  end
+
+  def last_week_users_local
+    Account.joins(:account_stat).where(domain: @domain == Rails.configuration.x.local_domain ? nil : @domain).group(:domain).order(total_active_posters: :desc).without_suspended.without_silenced.without_instance_actor.without_bots.where(account_stat: {last_status_at: 1.week.ago..}).select('domain, count(*) total_active_posters').take&.total_active_posters
   end
 
   def full_uri(domain)
@@ -154,7 +159,9 @@ class UpdateNodeService < BaseService
 
     node.thumbnail_remote_url = nil if @options[:force]
     node.thumbnail_remote_url = remote_url
-  rescue Mastodon::UnexpectedResponseError, HTTP::TimeoutError, HTTP::ConnectionError, OpenSSL::SSL::SSLError, HTTP::Redirector::TooManyRedirectsError
+    raise Mastodon::ValidationError if node.errors[:thumbnail].present?
+  rescue Mastodon::UnexpectedResponseError, Mastodon::ValidationError, HTTP::TimeoutError, HTTP::ConnectionError, OpenSSL::SSL::SSLError, HTTP::Redirector::TooManyRedirectsError
+    node.thumbnail = nil
   end
 
   def process_icon
@@ -162,15 +169,21 @@ class UpdateNodeService < BaseService
 
     node.icon_remote_url = nil if @options[:force]
     node.icon_remote_url = remote_url
-  rescue Mastodon::UnexpectedResponseError, Mastodon::LengthValidationError, HTTP::TimeoutError, HTTP::ConnectionError, OpenSSL::SSL::SSLError, HTTP::Redirector::TooManyRedirectsError
+    raise Mastodon::ValidationError if node.errors[:icon].present?
+  rescue Mastodon::UnexpectedResponseError, Mastodon::ValidationError, Mastodon::LengthValidationError, HTTP::TimeoutError, HTTP::ConnectionError, OpenSSL::SSL::SSLError, HTTP::Redirector::TooManyRedirectsError
+    node.icon = nil
   end
 
   def process_override
     node.info.merge!(node.info_override || {})
   end
 
+  def replace_api_domain(url)
+    url.sub(@domain, @api_domain) if @domain != @api_domain
+  end
+
   def fetch_icon_url
-    doc = Nokogiri::HTML(html_fetch(info('url')))
+    doc = Nokogiri::HTML(html_fetch(replace_api_domain(info('url'))) || html_fetch(info('url')))
     uri = Addressable::URI.parse(
             doc.css("meta[itemprop*=image]")&.first&.attributes&.fetch('content', nil)&.value ||
             doc.css("link[rel*=apple-touch-icon]")&.first&.attributes&.fetch('href', nil)&.value ||
@@ -212,6 +225,8 @@ class UpdateNodeService < BaseService
       nodeinfo_url ||= well_known_nodeinfo['links'].find { |link| link&.fetch('rel', nil) == NODEINFO_2_0_REL }&.fetch('href', nil)
     end
 
+    @api_domain = Addressable::URI.parse(nodeinfo_url).normalize.host
+
     node.nodeinfo        = nodeinfo_url.present? ? json_fetch(nodeinfo_url, true) : Node::ERROR_MISSING
     node.info            = process_software
     node.status          = :up
@@ -245,8 +260,8 @@ class UpdateNodeService < BaseService
   end
 
   def fetch_mastodon_instance_data
-    instance_v2 = "https://#{@domain}/api/v2/instance"
-    instance_v1 = "https://#{@domain}/api/v1/instance"
+    instance_v2 = "https://#{@api_domain}/api/v2/instance"
+    instance_v1 = "https://#{@api_domain}/api/v1/instance"
 
     major, minor, patch = node.upstream_version&.split('.')&.map(&:to_i)
 
@@ -257,7 +272,7 @@ class UpdateNodeService < BaseService
   end
 
   def fetch_misskey_instance_data
-    json = misskey_api_call("https://#@domain}/api/meta", '{"detail":true}')
+    json = misskey_api_call("https://#{@api_domain}/api/meta", '{"detail":true}')
 
     node.update!(instance_data: json) unless json.nil?
   end
