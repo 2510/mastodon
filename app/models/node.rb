@@ -39,9 +39,11 @@ class Node < ApplicationRecord
   enum status: { up: 0, gone: 1, reject: 2, busy: 3, not_found: 4, error: 5, no_address: 6 }, _suffix: :status
 
   has_many :accounts, primary_key: :domain, foreign_key: :domain, inverse_of: :node
+  has_one :instance, primary_key: :domain, foreign_key: :domain, inverse_of: :node
 
   scope :domain, ->(domain) { where(domain: Addressable::URI.parse(domain).normalize.to_s.downcase) if domain.present? }
-  scope :software, ->(name) { where("nodeinfo->'software'->>'name' = ?", name.downcase) if name.present? }
+  scope :software, ->(name) { where("info->>'software_name' = ?", name.downcase) if name.present? }
+  scope :upstream, ->(name) { where("info->>'upstream_name' = ?", name.downcase) if name.present? }
   scope :available, -> { where(status: :up).has_nodeinfo }
   scope :has_nodeinfo, -> { where("not(nodeinfo ? 'error' and nodeinfo->>'error' = 'missing')") }
   scope :missing, -> { where("nodeinfo is null or nodeinfo->>'error' = 'missing'") }
@@ -68,6 +70,9 @@ class Node < ApplicationRecord
       koyuspace
       ecko
       brighteon
+      kmyblue
+      yoiyami
+      glitchcafe
     ),
     'misskey' => %w(
       meisskey
@@ -76,9 +81,25 @@ class Node < ApplicationRecord
       foundkey
       groundpolis
       groundpolis-milkey
+      firefish
+      sharkey
+      iceshrimp
+      cherrypick
+      catodon
+      incestoma
+      nexkey
+      rosekey
+      hajkey
+      rumisskey
+      noyaskey
+      goblin
+      magnetar
+      lycheebridge
     ),
     'pleroma' => %w(
       akkoma
+      incestoma
+      pleroma_anni
     ),
   }
 
@@ -171,7 +192,7 @@ class Node < ApplicationRecord
       nil
     end
 
-    def upstream(fork)
+    def upstreams(fork)
       COMPATIBLES[fork&.downcase]
     end
   
