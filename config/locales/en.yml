@@ -741,6 +741,9 @@ en:
       mascot:
         desc_html: Displayed on multiple pages. At least 293×205px recommended. When not set, falls back to default mascot
         title: Mascot image
+      ng_pattern:
+        desc_html: Set a regular expression pattern to inspect Create Activity Content, and refuse Activity if you match
+        title: NG Pattern
       peers_api_enabled:
         desc_html: Domain names this server has encountered in the fediverse
         title: Publish list of discovered servers in the API
