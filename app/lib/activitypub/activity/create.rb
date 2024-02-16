@@ -42,8 +42,12 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     )
   end
 
+  def ng_pattern?
+    Setting.ng_pattern.present? && @object['content']&.match?(Setting.ng_pattern)
+  end
+
   def create_status
-    return reject_payload! if unsupported_object_type? || invalid_origin?(object_uri) || tombstone_exists? || !related_to_local_activity?
+    return reject_payload! if unsupported_object_type? || invalid_origin?(object_uri) || tombstone_exists? || !related_to_local_activity? || ng_pattern?
 
     lock_or_fail("create:#{object_uri}") do
       return if delete_arrived_first?(object_uri) || poll_vote?
