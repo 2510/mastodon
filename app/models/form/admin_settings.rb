@@ -40,6 +40,7 @@ class Form::AdminSettings
     poll_max_options
     reaction_max_per_account
     attachments_max
+    ng_pattern
   ).freeze
 
   BOOLEAN_KEYS = %i(
