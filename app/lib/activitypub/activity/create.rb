@@ -10,6 +10,8 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     else
       create_status
     end
+  rescue Mastodon::RejectPayload
+    reject_payload!
   end
 
   private
@@ -42,12 +44,12 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     )
   end
 
-  def ng_pattern?
-    Setting.ng_pattern.present? && @object['content']&.match?(Setting.ng_pattern)
+  def reject_pattern?
+    Setting.reject_pattern.present? && @object['content']&.match?(Setting.reject_pattern)
   end
 
   def create_status
-    return reject_payload! if unsupported_object_type? || invalid_origin?(object_uri) || tombstone_exists? || !related_to_local_activity? || ng_pattern?
+    return reject_payload! if unsupported_object_type? || invalid_origin?(object_uri) || tombstone_exists? || !related_to_local_activity? || reject_pattern?
 
     lock_or_fail("create:#{object_uri}") do
       return if delete_arrived_first?(object_uri) || poll_vote?
@@ -79,6 +81,9 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
 
     process_quote
     process_status_params
+
+    raise Mastodon::RejectPayload if MediaAttachment.where(id: @params[:media_attachment_ids]).where(blurhash: Setting.reject_blurhash.split(/\r\n/).filter(&:present?).uniq).present?
+
     process_expiry_params
     process_tags
     process_audience
