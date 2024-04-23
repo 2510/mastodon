@@ -17,6 +17,7 @@ class RedirectLinkResolveWorker
   def perform(url, status_id)
     parsed_url = Addressable::URI.parse(url)
     return if parsed_url.blank? || !%w(http https).include?(parsed_url.scheme) || parsed_url.host.blank? || RedirectLink.where(url: url).present?
+    return if !FetchLinkCardService::IGNORE_REDIRECT_HOST.include?(parsed_url.host)
 
     Request.new(:get, url).add_headers('User-Agent' => Mastodon::Version.user_agent + ' Bot').perform do |res|
       if res.code == 200 && url != res.uri.to_s
