@@ -193,6 +193,17 @@ class Formatter
     @html_entities ||= HTMLEntities.new
   end
 
+  def normalize(url)
+    parsed_url = Addressable::URI.parse(url)
+    Addressable::URI.new(
+      :scheme => parsed_url.normalized_scheme,
+      :authority => parsed_url.normalized_authority,
+      :path => parsed_url.path,
+      :query => parsed_url.query,
+      :fragment => parsed_url.fragment
+    )
+  end
+
   def encode(html)
     html_entities.encode(html)
   end
@@ -365,7 +376,7 @@ class Formatter
 
   def link_to_url(entity, options = {})
     entity_url = entity[:url]
-    url        = Addressable::URI.parse(entity_url).normalize.to_s
+    url        = normalize(entity_url).to_s
     html_attrs = { target: '_blank', rel: 'nofollow noopener noreferrer' }
 
     html_attrs[:rel] = "me #{html_attrs[:rel]}" if options[:me]
@@ -463,7 +474,7 @@ class Formatter
   def normalize_url_without_fragment(url)
     return if url.nil?
 
-    uri = Addressable::URI.parse(url).normalize
+    uri = normalize(url)
     uri.fragment = nil
     uri.to_s
   rescue
