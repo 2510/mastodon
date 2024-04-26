@@ -145,19 +145,42 @@ class Formatter
     Nokogiri::HTML.parse(format(status), nil, 'utf-8').css('a:not(.mention):not(.unhandled-link)').map { |x| x['href'].presence }.compact.uniq
   end
 
-  def remove_misskey_quote_link(html)
+  def remove_compatible_object_link(html)
+    # <p>...<span>...<br><br>RE: </span><a href=\"https://misskey.io/notes/xxxxxxxxxxxxxxxx\">https://misskey.io/notes/xxxxxxxxxxxxxxxx</a></p>
+
     tree     = Nokogiri::HTML.fragment(html)
     children = tree.children.size == 1 ? tree.child.children : tree.children
 
-    if children.size >= 2 && children[-1].name == 'a' && children[-2].children[-1].class.name == 'Nokogiri::XML::Text' && children[-2].children[-1].content == 'RE: '
-      children[-2].children[-1].unlink
-      children[-2].children[-1].unlink if children[-2].children[-1]&.name == 'br'
-      children[-2].children[-1].unlink if children[-2].children[-1]&.name == 'br'
-      children[-2].unlink if children[-2].children.size == 0
-      children[-1].unlink
-    end
+    if children.size >= 2
+      anchor   = children.pop
+      prefix   = children.last.class.name == 'Nokogiri::XML::Text' ? children.last : children.last.children.last
 
-    tree.to_html.html_safe
+      if anchor.name == 'a' && prefix.class.name == 'Nokogiri::XML::Text' && prefix.content == 'RE: '
+        if children.last.class.name == 'Nokogiri::XML::Text'
+          children.pop
+          children.pop if children.last&.name == 'br'
+          children.pop if children.last&.name == 'br'
+        else
+          children.last.children = children.last.children.then do |children|
+            children.pop
+            children.pop if children.last&.name == 'br'
+            children.pop if children.last&.name == 'br'
+            children
+          end
+          children.pop if children.last.children.size == 0
+        end
+
+        if tree.children.size == 1
+          tree.child.children = children
+        else
+          tree.children = children
+        end  
+      end
+
+      tree.to_html.html_safe
+    else
+      html.html_safe
+    end
   end
 
   private
@@ -168,6 +191,17 @@ class Formatter
 
   def html_entities
     @html_entities ||= HTMLEntities.new
+  end
+
+  def normalize(url)
+    parsed_url = Addressable::URI.parse(url)
+    Addressable::URI.new(
+      :scheme => parsed_url.normalized_scheme,
+      :authority => parsed_url.normalized_authority,
+      :path => parsed_url.path,
+      :query => parsed_url.query,
+      :fragment => parsed_url.fragment
+    )
   end
 
   def encode(html)
@@ -342,7 +376,7 @@ class Formatter
 
   def link_to_url(entity, options = {})
     entity_url = entity[:url]
-    url        = Addressable::URI.parse(entity_url).normalize.to_s
+    url        = normalize(entity_url).to_s
     html_attrs = { target: '_blank', rel: 'nofollow noopener noreferrer' }
 
     html_attrs[:rel] = "me #{html_attrs[:rel]}" if options[:me]
@@ -440,7 +474,7 @@ class Formatter
   def normalize_url_without_fragment(url)
     return if url.nil?
 
-    uri = Addressable::URI.parse(url).normalize
+    uri = normalize(url)
     uri.fragment = nil
     uri.to_s
   rescue
