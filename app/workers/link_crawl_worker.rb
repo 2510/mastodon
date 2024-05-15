@@ -19,6 +19,9 @@ class LinkCrawlWorker
   def done_process(status_id)
     redis.srem("statuses/#{status_id}/processing", 'LinkCrawlWorker')
     redis.del("statuses/#{status_id}/processing") if redis.scard("statuses/#{status_id}/processing") <= 0
+    Status.find(status_id)
     StatusStat.find_by(status_id: status_id)&.touch || StatusStat.create!(status_id: status_id)
+  rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordNotUnique
+    true
   end
 end
