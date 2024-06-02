@@ -16,6 +16,7 @@ class FetchLinkCardService < BaseService
 
   IGNORE_REDIRECT_HOST = %w(
     link.parallelgame.com
+    audon.space
   )
 
   def need_fetch?(status)
