@@ -84,6 +84,8 @@ Rails.application.configure do
     end
   end
 
+  config.active_record.yaml_column_permitted_classes = [Symbol, Date, Time, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone]
+
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 
