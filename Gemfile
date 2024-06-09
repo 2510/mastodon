@@ -161,7 +161,7 @@ gem 'connection_pool', require: false
 
 gem 'xorcist', '~> 1.1'
 gem 'cocoon', '~> 1.2'
-gem 'mail', '~> 2.8'
+gem 'mail', '2.7.1'
 
 gem "net-http", "~> 0.4.1"
 
