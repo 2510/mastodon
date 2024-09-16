@@ -139,7 +139,7 @@ class ActivityPub::TagManager
       when 'limited'
         status.conversation_id.present? ? [uri_for(status.conversation)] : []
       else
-        []
+        [uri_for(status.account)]
       end
 
     searchable_by.concat(mentions_uris(status))
@@ -152,7 +152,7 @@ class ActivityPub::TagManager
     when 'unlisted', 'private'
       [account_followers_url(account)]
     else
-      []
+      [uri_for(account)]
     end
   end
 

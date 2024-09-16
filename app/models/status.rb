@@ -614,7 +614,7 @@ class Status < ApplicationRecord
       status_relations  = relations_map_for_status(account_id, statuses)
       account           = Account.find_by(id: account_id)
 
-      statuses.reject! { |status| StatusFilter.new(status, Account.find(account_id), account_relations, status_relations).filtered? }
+      statuses.reject! { |status| StatusFilter.new(status, account, account_relations, status_relations).filtered? }
       statuses
     end
 

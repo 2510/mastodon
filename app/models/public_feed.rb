@@ -25,7 +25,7 @@ class PublicFeed
 
     scope.merge!(without_replies_scope) unless with_replies?
     scope.merge!(without_reblogs_scope) unless with_reblogs?
-    scope.merge!(local_only_scope) if (index_only? && !account?) || local_only?
+    scope.merge!(local_only_scope) if index_only? && !account?
     scope.merge!(public_searchable_scope) if index_only? && !account?
     scope.merge!(remote_only_scope) if remote_only?
     scope.merge!(domain_only_scope) if domain_only?

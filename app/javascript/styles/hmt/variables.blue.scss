@@ -1,0 +1,94 @@
+// Dependent colors
+$black: #000000;
+$white: #ffffff;
+
+$classic-base-color: #3f4753; // $gray-900
+$classic-primary-color: #707884; // $gray-700
+$classic-secondary-color: #dbe3f1; // $gray-100
+$classic-highlight-color: #72d6d4; // $primary
+
+// Differences
+$success-green: #769c56;
+$error-red: #c16b71;
+$warning-red: #ce7c52;
+$gold-star: #d9a14c;
+
+$base-overlay-background: $white !default;
+$valid-value-color: $success-green !default;
+
+$ui-base-color: $classic-secondary-color !default;
+$ui-base-lighter-color: #bfc7d5; // $gray-300
+$ui-primary-color: #72d6d4; // $primary
+$ui-secondary-color: $classic-base-color !default;
+$ui-highlight-color: #3c6da2; // $info
+
+$primary-text-color: #29313c; //$black
+$darker-text-color: $classic-base-color !default;
+$dark-text-color: #575f6b; // $gray-800
+$action-button-color: #707884; // $gray-700
+
+$inverted-text-color: #29313c; //$black
+$lighter-text-color: $classic-base-color !default;
+$light-text-color: #575f6b; // $gray-800
+
+//Newly added colors
+$account-background-color: $white !default;
+
+//Invert darkened and lightened colors
+@function darken($color, $amount) {
+  // @return hsl(hue($color), saturation($color) + $amount, lightness($color) + $amount);
+  // $room: 255 - max(red($color), green($color), blue($color));
+  $room: 255;
+
+  $tmp-r: red($color) + $room * calc($amount / 100%);
+  $tmp-g: green($color) + $room * calc($amount / 100%);
+  $tmp-b: blue($color) + $room * calc($amount / 100%);
+  $tmp-max: max($tmp-r, $tmp-g, $tmp-b);
+  $tmp-min: min($tmp-r, $tmp-g, $tmp-b);
+
+  $return: rgb($tmp-r, $tmp-g, $tmp-b);
+
+  @if $tmp-max != $tmp-min {
+    @if $tmp-min > 255 {
+      $return: rgb(255, 255, 255);
+    } @else if $tmp-max > 255 {
+      $clamped-r: $tmp-min + calc((255 - $tmp-min) * ($tmp-r - $tmp-min) / ($tmp-max - $tmp-min));
+      $clamped-g: $tmp-min + calc((255 - $tmp-min) * ($tmp-g - $tmp-min) / ($tmp-max - $tmp-min));
+      $clamped-b: $tmp-min + calc((255 - $tmp-min) * ($tmp-b - $tmp-min) / ($tmp-max - $tmp-min));
+
+      $return: rgb($clamped-r, $clamped-g, $clamped-b);
+    }
+  }
+
+  @return $return;
+}
+
+@function lighten($color, $amount) {
+  // @return hsl(hue($color), saturation($color) + $amount, lightness($color) - $amount);
+  // $room: min(red($color), green($color), blue($color));
+  $room: 255;
+
+  $tmp-r: red($color) - $room * calc($amount / 100%);
+  $tmp-g: green($color) - $room * calc($amount / 100%);
+  $tmp-b: blue($color) - $room * calc($amount / 100%);
+  $tmp-max: max($tmp-r, $tmp-g, $tmp-b);
+  $tmp-min: min($tmp-r, $tmp-g, $tmp-b);
+
+  $return: rgb($tmp-r, $tmp-g, $tmp-b);
+
+  @if $tmp-max != $tmp-min {
+    @if $tmp-max < 0 {
+      $return: rgb(0, 0, 0);
+    } @else if $tmp-min < 0 {
+      $clamped-r: calc($tmp-max * ($tmp-r - $tmp-min) / ($tmp-max - $tmp-min));
+      $clamped-g: calc($tmp-max * ($tmp-g - $tmp-min) / ($tmp-max - $tmp-min));
+      $clamped-b: calc($tmp-max * ($tmp-b - $tmp-min) / ($tmp-max - $tmp-min));
+
+      $return: rgb($clamped-r, $clamped-g, $clamped-b);
+    }
+  }
+
+  @return $return;
+}
+
+$emojis-requiring-inversion: 'chains';
