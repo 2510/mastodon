@@ -37,6 +37,14 @@
                 = t('about.discover_servers')
                 %small= t('about.browse_server_directory')
 
+        - if Setting.server_directory
+          .directory__tag
+            = optional_link_to Setting.server_directory, server_explore_path do
+              %h4
+                = fa_icon 'users fw'
+                = t('about.discover_servers')
+                %small= t('about.browse_server_directory')
+
         - if Setting.timeline_preview
           .directory__tag
             = optional_link_to Setting.timeline_preview, public_timeline_path do

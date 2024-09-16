@@ -12,9 +12,4 @@ class Api::V1::CustomEmojisController < Api::BaseController
     @custom_emoji = CustomEmoji.listed.includes(:category).find(params[:id])
     render json: @custom_emoji, serializer: REST::CustomEmojiDetailSerializer
   end
-
-  def show
-    @custom_emoji = CustomEmoji.listed.includes(:category).find(params[:id])
-    render json: @custom_emoji, serializer: REST::CustomEmojiDetailSerializer
-  end
 end
