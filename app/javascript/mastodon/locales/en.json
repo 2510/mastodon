@@ -479,6 +479,7 @@
   "notification.favourite": "{name} favourited your post",
   "notification.follow": "{name} followed you",
   "notification.follow_request": "{name} has requested to follow you",
+  "notification.followed-message": "{name} accept your follow request",
   "notification.mention": "{name} mentioned you",
   "notification.own_poll": "Your poll has ended",
   "notification.poll": "A poll you have voted in has ended",

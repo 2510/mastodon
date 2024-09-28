@@ -92,6 +92,12 @@ class Formatter
     html.html_safe # rubocop:disable Rails/OutputSafety
   end
 
+  def format_message(account, message, **options)
+    html = linkify(message)
+    html = encode_custom_emojis(html, account.emojis, options[:autoplay]) if options[:custom_emojify]
+    html.html_safe # rubocop:disable Rails/OutputSafety
+  end
+
   def sanitize(html, config)
     Sanitize.fragment(html, config)
   end
