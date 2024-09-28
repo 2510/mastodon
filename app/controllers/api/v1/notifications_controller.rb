@@ -77,7 +77,7 @@ class Api::V1::NotificationsController < Api::BaseController
   def exclude_types
     val = params.permit(exclude_types: [])[:exclude_types] || []
     val = [val] unless val.is_a?(Enumerable)
-    val = val << 'emoji_reaction' << 'status' << 'status_reference' << 'scheduled_status' unless new_notification_type_compatible?
+    val = val << 'emoji_reaction' << 'status' << 'status_reference' << 'scheduled_status' << 'followed_message' unless new_notification_type_compatible?
     val = val << 'emoji_reaction' unless current_user&.setting_enable_reaction
     val = val << 'status_reference' unless current_user&.setting_enable_status_reference
     val.uniq
