@@ -392,10 +392,11 @@ class Header extends ImmutablePureComponent {
       menu.push({ text: intl.formatMessage(messages.admin_account, { name: account.get('username') }), href: `/admin/accounts/${account.get('id')}` });
     }
 
-    const content         = { __html: account.get('note_emojified') };
-    const displayNameHtml = { __html: account.get('display_name_html') };
-    const fields          = account.get('fields');
-    const acct            = account.get('acct').indexOf('@') === -1 && domain ? `${account.get('acct')}@${domain}` : account.get('acct');
+    const content          = { __html: account.get('note_emojified') };
+    const displayNameHtml  = { __html: account.get('display_name_html') };
+    const fields           = account.get('fields');
+    const acct             = account.get('acct').indexOf('@') === -1 && domain ? `${account.get('acct')}@${domain}` : account.get('acct');
+    const followed_message = { __html: account.get('followed_message_emojified') };
 
     let badge;
 
@@ -537,6 +538,8 @@ class Header extends ImmutablePureComponent {
           <div className='account__header__extra'>
             {!hideProfile && (
               <div className='account__header__bio'>
+                {following && account.get('followed_message') && <div className='account__header__followed_message translate' dangerouslySetInnerHTML={followed_message} />}
+
                 {(fields.size > 0 || identity_proofs.size > 0) && (
                   <div className='account__header__fields'>
                     {identity_proofs.map((proof, i) => (

@@ -135,8 +135,11 @@ class HeaderExtra extends ImmutablePureComponent {
     }
 
     const suspended = account.get('suspended');
+    const following = account.getIn(['relationship', 'following']);
 
     const content = { __html: account.get('note_emojified') };
+    const followed_message = { __html: account.get('followed_message_emojified') };
+
     const fields  = account.get('fields');
 
     const location = account.getIn(['other_settings', 'location']);
@@ -176,6 +179,8 @@ class HeaderExtra extends ImmutablePureComponent {
       <div className={classNames('account__header', 'advanced', { inactive: !!account.get('moved') })} ref={this.setRef} >
         <div className='account__header__extra'>
           <div className='account__header__bio'>
+            {following && account.get('followed_message') && <div className='account__header__followed_message translate' dangerouslySetInnerHTML={followed_message} />}
+
             {(fields.size > 0 || identity_proofs.size > 0) && (
               <div className='account__header__fields'>
                 {identity_proofs.map((proof, i) => (

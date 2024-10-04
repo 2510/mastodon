@@ -1298,6 +1298,10 @@ ja:
       body: "%{name} さんがあなたにフォローをリクエストしました"
       subject: "%{name} さんからのフォローリクエスト"
       title: 新たなフォローリクエスト
+    followed_message:
+      body: "%{name} さんからフォロー承認メッセージがあります:"
+      subject: "%{name} さんがあなたのフォローリクエストを承認しました"
+      title: フォローリクエスト承認メッセージ
     mention:
       action: 返信
       body: "%{name} さんから返信がありました:"
