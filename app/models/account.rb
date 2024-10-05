@@ -66,11 +66,16 @@ class Account < ApplicationRecord
     hub_url
   )
 
-  USERNAME_RE   = /[a-z0-9_]+([a-z0-9_\.-]+[a-z0-9_]+)?/i
-  MENTION_RE    = /(?<=^|[^\/[:word:]])@((#{USERNAME_RE})(?:@[[:word:]\.\-]+[a-z0-9]+)?)/i
-  URL_PREFIX_RE = /\Ahttp(s?):\/\/[^\/]+/
+  USERNAME_RE   = /[a-z0-9_]+([.-]+[a-z0-9_]+)*/i
+  MENTION_RE    = %r{(?<![=/[:word:]])@((#{USERNAME_RE})(?:@[[:word:]]+([.-]+[[:word:]]+)*)?)}
+  URL_PREFIX_RE = %r{\Ahttp(s?)://[^/]+}
+  USERNAME_ONLY_RE = /\A#{USERNAME_RE}\z/i
 
   DEFAULT_FIELDS_SIZE = 8
+
+  HIDDEN_OTHER_SETTING_KEYS = %w(
+    followed_message
+  )
 
   include Attachmentable
   include AccountAssociations
@@ -718,6 +723,7 @@ class Account < ApplicationRecord
   def prepare_contents
     display_name&.strip!
     note&.strip!
+    followed_message&.strip!
   end
 
   def prepare_username
@@ -739,7 +745,7 @@ class Account < ApplicationRecord
   end
 
   def emojifiable_text
-    [note, display_name, fields.map(&:name), fields.map(&:value)].join(' ')
+    [note, display_name, followed_message, fields.map(&:name), fields.map(&:value)].join(' ')
   end
 
   def clean_feed_manager
