@@ -12,6 +12,7 @@ import Avatar from 'mastodon/components/avatar';
 import Emoji from 'mastodon/components/emoji';
 import Icon from 'mastodon/components/icon';
 import Permalink from 'mastodon/components/permalink';
+import Content from 'mastodon/components/content';
 import classNames from 'classnames';
 
 const messages = defineMessages({
@@ -167,7 +168,6 @@ class Notification extends ImmutablePureComponent {
 
   renderFollowedMessage (notification, account, link) {
     const { intl, unread } = this.props;
-    const followed_message = { __html: account.get('followed_message_emojified') };
     account = notification.get('target_account');
 
     return (
@@ -183,15 +183,17 @@ class Notification extends ImmutablePureComponent {
             </span>
           </div>
 
-          <div className='notification__message'>
-            <div className='notification__avatar-wrapper'>
-              <Avatar account={account} size={48} />
-            </div>
+          {account.get('followed_message') &&
+            <div className='notification__message'>
+              <div className='notification__avatar-wrapper'>
+                <Avatar account={account} size={48} />
+              </div>
 
-            <span>
-              {account.get('followed_message') && <div className='notification__followed_message translate' dangerouslySetInnerHTML={followed_message} />}
-            </span>
-          </div>
+              <div className='notification__followed_message translate'>
+                <Content className='notification__followed_message' contentHtml={{ __html: account.get('followed_message_emojified') }} />
+              </div>
+            </div>
+          }
         </div>
       </HotKeys>
     );
