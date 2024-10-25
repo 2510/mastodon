@@ -100,13 +100,13 @@ export default class ColumnSettings extends React.PureComponent {
         </div>
 
         <div role='group' aria-labelledby='notifications-followed-message'>
-          <span id='notifications-followed-message' className='column-settings__section'><FormattedMessage id='notifications.column_settings.followed_message' defaultMessage='Followed messages:' /></span>
+          <span id='notifications-followed-message' className='column-settings__section'><FormattedMessage id='notifications.column_settings.followed' defaultMessage='Followed messages:' /></span>
 
           <div className='column-settings__row'>
-            <SettingToggle disabled={browserPermission === 'denied'} prefix='notifications_desktop' settings={settings} settingPath={['alerts', 'followed_message']} onChange={onChange} label={alertStr} />
-            {showPushSettings && <SettingToggle prefix='notifications_push' settings={pushSettings} settingPath={['alerts', 'followed_message']} onChange={this.onPushChange} label={pushStr} />}
-            <SettingToggle prefix='notifications' settings={settings} settingPath={['shows', 'followed_message']} onChange={onChange} label={showStr} />
-            <SettingToggle prefix='notifications' settings={settings} settingPath={['sounds', 'followed_message']} onChange={onChange} label={soundStr} />
+            <SettingToggle disabled={browserPermission === 'denied'} prefix='notifications_desktop' settings={settings} settingPath={['alerts', 'followed']} onChange={onChange} label={alertStr} />
+            {showPushSettings && <SettingToggle prefix='notifications_push' settings={pushSettings} settingPath={['alerts', 'followed']} onChange={this.onPushChange} label={pushStr} />}
+            <SettingToggle prefix='notifications' settings={settings} settingPath={['shows', 'followed']} onChange={onChange} label={showStr} />
+            <SettingToggle prefix='notifications' settings={settings} settingPath={['sounds', 'followed']} onChange={onChange} label={soundStr} />
           </div>
         </div>
 

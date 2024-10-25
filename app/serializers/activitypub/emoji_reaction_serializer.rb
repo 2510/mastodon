@@ -1,13 +1,15 @@
 # frozen_string_literal: true
 
 class ActivityPub::EmojiReactionSerializer < ActivityPub::Serializer
+  context_extensions :emoji_react
+
   attributes :id, :type, :actor, :content
   attribute :virtual_object, key: :object
 
   has_many :virtual_tags, key: :tag, unless: -> { object.custom_emoji.nil? }
 
   def id
-    ActivityPub::TagManager.instance.uri_for(object)
+    [ActivityPub::TagManager.instance.uri_for(object.account), '#emoji_reactions/', object.id].join
   end
 
   def type

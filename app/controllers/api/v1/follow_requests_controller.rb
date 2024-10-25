@@ -15,7 +15,7 @@ class Api::V1::FollowRequestsController < Api::BaseController
     AuthorizeFollowService.new.call(account, current_account)
     follow = Follow.find_by(account: account, target_account: current_account)
     NotifyService.new.call(current_account, :follow, follow)
-    NotifyService.new.call(account, :followed_message, follow) if account.local?
+    NotifyService.new.call(account, :followed, follow) if account.local?
     render json: account, serializer: REST::RelationshipSerializer, relationships: relationships
   end
 

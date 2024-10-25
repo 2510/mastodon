@@ -481,6 +481,7 @@ en:
         favourite: Someone favourited your post
         follow: Someone followed you
         follow_request: Someone requested to follow you
+        followed: Someone accepts your follow request
         mention: Someone mentioned you
         pending_account: New account needs review
         reaction: Someone reactioned your post

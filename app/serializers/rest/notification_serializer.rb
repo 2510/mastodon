@@ -18,7 +18,7 @@ class REST::NotificationSerializer < ActiveModel::Serializer
   end
 
   def follow_type?
-    [:follow, :follow_request, :followed_message].include?(object.type)
+    [:follow, :follow_request, :followed].include?(object.type)
   end
 
   def reblog?

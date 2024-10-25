@@ -23,7 +23,7 @@ class Notification < ApplicationRecord
     'Status'          => :reblog,
     'Follow'          => :follow,
     'FollowRequest'   => :follow_request,
-    'FollowedMessage' => :followed_message,
+    'Followed'        => :followed,
     'Favourite'       => :favourite,
     'Poll'            => :poll,
     'EmojiReaction'   => :emoji_reaction,
@@ -37,7 +37,7 @@ class Notification < ApplicationRecord
     reblog
     follow
     follow_request
-    followed_message
+    followed
     favourite
     poll
     emoji_reaction
@@ -114,7 +114,7 @@ class Notification < ApplicationRecord
       follow&.target_account
     when :follow_request
       follow_request&.target_account
-    when :followed_message
+    when :followed
       follow&.target_account
     else
       target_status&.account
@@ -180,7 +180,7 @@ class Notification < ApplicationRecord
     case type
     when :status, :reblog, :follow, :favourite, :follow_request, :poll, :emoji_reaction, :scheduled_status
       self.from_account_id = activity&.account_id
-    when :followed_message
+    when :followed
       self.from_account_id = activity&.target_account_id
     when :mention, :status_reference
       self.from_account_id = activity&.status&.account_id

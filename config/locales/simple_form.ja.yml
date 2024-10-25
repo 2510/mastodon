@@ -263,7 +263,7 @@ ja:
         email: メールアドレス
         expires_in: 有効期限
         fields: プロフィール補足情報
-        followed_message: フォローリクエスト承認メッセージ
+        followed_message: フォロー承認メッセージ
         header: ヘッダー
         honeypot: "%{label} (入力しない)"
         inbox_url: リレーサーバーの inbox URL
@@ -481,6 +481,7 @@ ja:
         favourite: お気に入り登録された時
         follow: フォローされた時
         follow_request: フォローリクエストを受けた時
+        followed: フォローが承認された時
         mention: 返信が来た時
         pending_account: 新しいアカウントの承認が必要な時
         reaction: リアクションされた時

@@ -31,7 +31,7 @@ class FollowRequest < ApplicationRecord
 
   def authorize!
     follow = account.follow!(target_account, reblogs: show_reblogs, notify: notify, delivery: delivery, uri: uri, bypass_limit: true)
-    NotifyService.new.call(account, :followed_message, follow) if account.local?
+    NotifyService.new.call(account, :followed, follow) if account.local?
     MergeWorker.perform_async(target_account.id, account.id) if account.local? && delivery?
     destroy!
   end

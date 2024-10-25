@@ -19,8 +19,8 @@
                                     %td
                                       = image_tag full_pack_url('media/images/mailer/icon_person_add.png'), alt: ''
 
-                              %h1= t 'notification_mailer.followed_message.title'
-                              %p.lead= t('notification_mailer.followed_message.body', name: @account.acct)
+                              %h1= t 'notification_mailer.followed.title'
+                              %p.lead= t('notification_mailer.followed.body', name: @account.acct)
 
 %table.email-table{ cellspacing: 0, cellpadding: 0 }
   %tbody
