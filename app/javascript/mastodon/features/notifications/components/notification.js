@@ -25,7 +25,7 @@ const messages = defineMessages({
   emoji_reaction: { id: 'notification.emoji_reaction', defaultMessage: '{name} reactioned your post' },
   status_reference: { id: 'notification.status_reference', defaultMessage: '{name} referenced your post' },
   scheduled_status: { id: 'notification.scheduled_status', defaultMessage: 'Your scheduled post has been posted' },
-  followed_message: { id: 'notification.followed_message', defaultMessage: '{name} accept your follow request' },
+  followed: { id: 'notification.followed', defaultMessage: '{name} accept your follow request' },
 });
 
 const notificationForScreenReader = (intl, message, timestamp) => {
@@ -464,7 +464,7 @@ class Notification extends ImmutablePureComponent {
       return this.renderFollow(notification, account, link);
     case 'follow_request':
       return this.renderFollowRequest(notification, account, link);
-    case 'followed_message':
+    case 'followed':
       return this.renderFollowedMessage(notification, account, link);
     case 'mention':
       return this.renderMention(notification);

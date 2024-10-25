@@ -185,6 +185,6 @@ class REST::AccountSerializer < ActiveModel::Serializer
   end
 
   def following?
-    respond_to?(:current_user) && current_user&.account&.following?(object) && object.followed_message.present?
+    respond_to?(:current_user) && (current_user&.account&.following?(object) || current_user&.account&.id == object.id) && object.followed_message.present?
   end
 end

@@ -108,7 +108,10 @@ class HeaderExtra extends ImmutablePureComponent {
       <div className={classNames('account__header', 'advanced', { inactive: !!account.get('moved') })} >
         <div className='account__header__extra'>
           <div className='account__header__bio'>
-            {following && account.get('followed_message') && <div className='account__header__followed_message translate'><Content contentHtml={{ __html: followed_message }} /></div>}
+            {(following || account.get('id') === me) && account.get('followed_message') && <div className='account__header__followed_message translate'>
+              <label className='account__header__followed_message_header'><FormattedMessage id='account.followed_message_header' defaultMessage='Message to followers' /></label>
+              <Content contentHtml={{ __html: followed_message }} />
+            </div>}
 
             {(fields.size > 0 || identity_proofs.size > 0) && (
               <div className='account__header__fields'>

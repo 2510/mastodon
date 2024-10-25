@@ -7770,6 +7770,14 @@ noscript {
       border-radius: 6px;
       background: color-mix(in srgb, $valid-value-color, transparent 90%);
       padding: 6px 8px;
+
+      &_header {
+        display: block;
+        font-size: 12px;
+        color: $darker-text-color;
+        font-weight: 500;
+        margin-bottom: 5px;
+      }
     }
 
     .account__header__joined {
