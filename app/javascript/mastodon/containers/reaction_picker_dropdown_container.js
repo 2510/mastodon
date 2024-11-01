@@ -1,3 +1,4 @@
+import { getScrollbarWidth } from 'mastodon/utils/scrollbar';
 import { openDropdownMenu, closeDropdownMenu } from '../actions/dropdown_menu';
 import { fetchRelationships } from 'mastodon/actions/accounts';
 import { openModal, closeModal } from '../actions/modal';
@@ -75,6 +76,9 @@ const mapDispatchToProps = (dispatch, { status, onPickEmoji, scrollKey }) => ({
   },
 
   onOpen(id, dropdownPlacement, keyboard) {
+    document.body.classList.add('with-modals--active');
+    document.documentElement.style.marginRight = `${getScrollbarWidth()}px`;
+
     dispatch((_, getState) => {
       let state = getState();
       if (status) {
@@ -95,8 +99,10 @@ const mapDispatchToProps = (dispatch, { status, onPickEmoji, scrollKey }) => ({
   },
 
   onClose(id) {
-    dispatch(closeModal('REACTION'));
-    dispatch(closeDropdownMenu(id));
+    dispatch(isUserTouching() ? closeModal('REACTION') : closeDropdownMenu(id));
+
+    document.body.classList.remove('with-modals--active');
+    document.documentElement.style.marginRight = 0;
   },
 });
 
