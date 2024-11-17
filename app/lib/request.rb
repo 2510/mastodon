@@ -97,7 +97,7 @@ class Request
 
   def perform
     begin
-      response = http_client.public_send(@verb, @url.to_s, @options.merge(headers: headers))
+      response = http_client.public_send(@verb, @url.to_s, **@options.merge(headers: headers))
     rescue => e
       raise e.class, "#{e.message} on #{@url}", e.backtrace[0]
     end
@@ -134,7 +134,7 @@ class Request
     end
 
     def http_client
-      HTTP.use(:auto_inflate).timeout(TIMEOUT.dup).follow(max_hops: 2)
+      HTTP.use(:auto_inflate).timeout(TIMEOUT.dup).follow(max_hops: 3)
     end
   end
 
