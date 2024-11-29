@@ -17,6 +17,7 @@ class REST::StatusSerializer < ActiveModel::Serializer
   attribute :bookmarked, if: :current_user?
   attribute :emoji_reactioned, if: :current_user?
   attribute :pinned, if: :pinnable?
+  has_many :filtered, serializer: REST::FilterResultSerializer, if: :current_user?
   attribute :circle_id, if: :limited_owned_parent_status?
 
   attribute :content, unless: :source_requested?
@@ -245,6 +246,14 @@ class REST::StatusSerializer < ActiveModel::Serializer
     end
   end
 
+  def filtered
+    if instance_options && instance_options[:relationships]
+      instance_options[:relationships].filters_map[object.id] || []
+    else
+      current_user.account.status_matches_filters(object)
+    end
+  end
+
   def pinnable?
     owned_status? &&
       !object.reblog? &&
@@ -272,7 +281,7 @@ class REST::StatusSerializer < ActiveModel::Serializer
   end
 
   class MentionSerializer < ActiveModel::Serializer
-    attributes :id, :username, :url, :acct, :group
+    attributes :id, :username, :url, :acct, :group, :moved_acct
 
     def id
       object.account_id.to_s
@@ -288,6 +297,10 @@ class REST::StatusSerializer < ActiveModel::Serializer
 
     def acct
       object.account.pretty_acct
+    end
+
+    def moved_acct
+      object.account.moved_to_account&.pretty_acct || acct
     end
 
     def group
