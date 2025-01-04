@@ -41,6 +41,22 @@ class CustomEmoji < ApplicationRecord
     :(#{SHORTCODE_RE_FRAGMENT}):
     (?=[^[:alnum:]:]|$)/x
 
+  ALIAS_KEYS = {
+    'aliases'          => 'keywords',
+    'visibleInPicker'  => 'visible_in_picker',
+    'show'             => 'visible_in_picker',
+    'list'             => 'visible_in_picker',
+    'misskeyLicense'   => 'misskey_license',
+    '_misskey_license' => 'misskey_license',
+    '_misskeyLicense'  => 'misskey_license',
+    'usageInfo'        => 'usage_info',
+    'creator'          => 'author',
+    'isBasedOn'        => 'is_based_on',
+    'orgCategory'      => 'org_category',
+    'copyPermission'   => 'copy_permission',
+  }
+
+  IMAGE_FILE_EXTENSIONS = %w(.png .gif .webp .jpg .jpeg .heif .heic .avif .bmp).freeze
   IMAGE_MIME_TYPES = %w(image/png image/gif image/webp image/jpeg image/heif image/heic image/avif image/bmp).freeze
   IMAGE_CONVERTIBLE_MIME_TYPES = %w(image/jpeg image/heif image/heic image/bmp).freeze
 
@@ -83,7 +99,11 @@ class CustomEmoji < ApplicationRecord
   end
 
   def keywords=(val)
-    self.aliases = val.split(' ')
+    if val.is_a?(Array)
+      self.aliases = val
+    else
+      self.aliases = val.split(' ')
+    end
   end
 
   def license
@@ -92,6 +112,14 @@ class CustomEmoji < ApplicationRecord
 
   def license=(val)
     meta['license'] = val
+  end
+
+  def misskey_license
+    meta['misskey_license']
+  end
+
+  def misskey_license=(val)
+    meta['misskey_license'] = val
   end
 
   def usage_info
@@ -150,21 +178,21 @@ class CustomEmoji < ApplicationRecord
     :emoji
   end
 
-  def copy!(on_existance_action = :override)
+  def copy!(on_existance_action = :rename)
     copy = self.class.find_or_initialize_by(domain: nil, shortcode: shortcode) { |new_copy| new_copy.visible_in_picker = false }
 
     case on_existance_action
     when :rename
-      unless copy.new_record?
+      unless copy.new_record? || copy.is_based_on != self.uri
         _, base, num = shortcode.match(/^(.*?)(\d+)?$/).to_a
-        len = num.length
-        num = num.to_i
+        len = num&.length || 1
+        num = num&.to_i || 0
         template = "#{base}%0#{len}<num>d"
 
         loop do
           num += 1
           shortcode = format(template, num: num)
-          copy = self.class.initialize_by(domain: nil, shortcode: shortcode)
+          copy = self.class.new(domain: nil, shortcode: shortcode)
           break unless copy.nil?
         end
 
@@ -175,14 +203,21 @@ class CustomEmoji < ApplicationRecord
     copy.width = self.width
     copy.height = self.height
     copy.thumbhash = self.thumbhash
-    copy.copy_permission = self.copy_permission
-    copy.aliases = self.aliases
-    copy.meta = self.meta.merge({ is_based_on: self.uri })
+    copy.copy_permission = self.copy_permission unless none_permission?
+    copy.aliases = self.aliases if copy.aliases.blank?
+    copy.meta.merge!(self.meta.compact, { is_based_on: self.uri })
     copy.tap(&:save!)
   end
 
   def fetch
-    ResolveURLService.new.call(uri) unless domain.nil?
+    if domain.nil?
+      return if is_based_on.blank?
+
+      updated_emoji = ResolveURLService.new.call(is_based_on)
+      updated_emoji.copy!(:override) if updated_emoji.present?
+    else
+      ResolveURLService.new.call(uri) unless domain.nil?
+    end
   end
 
   class << self
@@ -199,7 +234,7 @@ class CustomEmoji < ApplicationRecord
     def search(searchtext, type = :include)
       prefix = %i(end_with include).include?(type) ? '%' : ''
       suffix = %i(start_with include).include?(type) ? '%' : ''
-      where('custom_emojis.id IN (select distinct id from (select id, unnest(shortcode || aliases) as val from custom_emojis) e where val ilike :searchtext)', { searchtext: "#{prefix}#{searchtext}#{suffix}" })
+      where('custom_emojis.id IN (select distinct id from (select id, unnest(shortcode || aliases) as val from custom_emojis) e where val ilike :searchtext)', { searchtext: "#{prefix}#{CustomEmoji.sanitize_sql_like(searchtext.strip)}#{suffix}" })
     end
 
     private
