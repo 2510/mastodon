@@ -28,7 +28,7 @@ gem 'active_model_serializers', '~> 0.10'
 gem 'active_record_extended', git: 'https://github.com/GeorgeKaraszi/ActiveRecordExtended.git', ref: '8c9d1a3e72aabf1a4f1fbeeb93a6e0f170fd0c3e'
 gem 'order_as_specified'
 gem 'addressable', '~> 2.8'
-gem 'bootsnap', '~> 1.6.0', require: false
+gem 'bootsnap', '~> 1.18.0', require: false
 gem 'browser'
 gem 'charlock_holmes', '~> 0.7.7'
 gem 'iso-639'
@@ -169,5 +169,3 @@ gem 'net-pop'
 gem 'net-imap'
 
 gem "globalid", "~> 1.0"
-
-gem 'psych', '~> 3.1'
