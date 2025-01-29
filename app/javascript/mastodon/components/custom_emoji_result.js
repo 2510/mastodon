@@ -31,6 +31,33 @@ class CustomEmojiResult extends React.PureComponent {
     hovered: false,
   };
 
+  _updateEmojiLinks () {
+    const target = this.target;
+
+    if (!target) {
+      return;
+    }
+
+    const emojis = target.querySelectorAll('.custom-emoji');
+
+    for (var i = 0; i < emojis.length; i++) {
+      let emoji = emojis[i];
+      emoji.addEventListener('click', this.handleEmojiClick, false);
+      emoji.style.cursor = 'pointer';
+    }
+  }
+
+  handleEmojiClick = e => {
+    const shortcode = e.target.dataset.shortcode;
+    const domain = e.target.dataset.domain;
+
+    if (this.context.router) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.context.router.history.push(`/emoji_detail/${shortcode}${domain ? `@${domain}` : ''}`);
+    }
+  }
+
   _updateLinks () {
     const { intl } = this.props;
     const node = this.node;
@@ -96,12 +123,14 @@ class CustomEmojiResult extends React.PureComponent {
 
   componentDidMount () {
     this._updateLinks();
+    this._updateEmojiLinks();
     this.target?.addEventListener('mouseenter', this.handleMouseEnter, { capture: true });
     this.target?.addEventListener('mouseleave', this.handleMouseLeave, false);
   }
 
   componentDidUpdate () {
     this._updateLinks();
+    this._updateEmojiLinks();
   }
 
   componentWillUnmount () {
