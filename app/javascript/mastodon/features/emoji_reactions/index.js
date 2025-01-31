@@ -39,7 +39,7 @@ const mapStateToProps = (state, { columnId, params }) => {
 class Reaction extends ImmutablePureComponent {
 
   static propTypes = {
-    emojiReaction: ImmutablePropTypes.map.isRequired,
+    emojiReaction: ImmutablePropTypes.map,
   };
 
   state = {
@@ -55,15 +55,17 @@ class Reaction extends ImmutablePureComponent {
 
     return (
       <div className='account__emoji_reaction' onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave}>
-        <Emoji className='reaction' hovered={this.state.hovered} emoji={emojiReaction.get('name')} url={emojiReaction.get('url')} static_url={emojiReaction.get('static_url')} />
+        <Emoji className='reaction' hovered={this.state.hovered} emoji={emojiReaction.get('name')} url={emojiReaction.get('url')} static_url={emojiReaction.get('static_url')} domain={emojiReaction.get('domain')} />
       </div>
     );
   };
 }
 
-export default @connect(mapStateToProps)
-@injectIntl
-class EmojiReactions extends ImmutablePureComponent {
+class EmojiReactions extends React.PureComponent {
+
+  static contextTypes = {
+    router: PropTypes.object,
+  };
 
   static propTypes = {
     params: PropTypes.object.isRequired,
@@ -76,24 +78,83 @@ class EmojiReactions extends ImmutablePureComponent {
     isLoading: PropTypes.bool,
   };
 
-  componentWillMount () {
-    if (!this.props.emojiReactions) {
-      this.props.dispatch(fetchEmojiReactions(this.props.params.statusId));
+  componentDidMount () {
+    const { emojiReactions, params: { statusId }, dispatch } = this.props;
+
+    if (!emojiReactions) {
+      dispatch(fetchEmojiReactions(statusId));
+    }
+
+    this._updateEmojiLinks();
+  }
+
+  componentDidUpdate (prevProps) {
+    const { emojiReactions, params: { statusId }, dispatch } = this.props;
+
+    if (!emojiReactions || prevProps.params.statusId !== statusId) {
+      dispatch(fetchEmojiReactions(statusId));
+    }
+
+    this._updateEmojiLinks();
+  }
+
+  componentWillUnmount () {
+    this._removeEmojiLinks();
+  }
+
+  _updateEmojiLinks () {
+    const node = this.node;
+
+    if (!node) {
+      return;
+    }
+
+    const emojis = node.querySelectorAll('.custom-emoji');
+
+    for (var i = 0; i < emojis.length; i++) {
+      let emoji = emojis[i];
+      emoji.addEventListener('click', this.handleEmojiClick, false);
+      emoji.style.cursor = 'pointer';
     }
   }
 
-  componentWillReceiveProps (nextProps) {
-    if (nextProps.params.statusId !== this.props.params.statusId && nextProps.params.statusId) {
-      this.props.dispatch(fetchEmojiReactions(nextProps.params.statusId));
+  _removeEmojiLinks () {
+    const node = this.node;
+
+    if (!node) {
+      return;
+    }
+
+    const emojis = node.querySelectorAll('.custom-emoji');
+
+    for (var i = 0; i < emojis.length; i++) {
+      let emoji = emojis[i];
+      emoji.removeEventListener('click', this.handleEmojiClick, false);
+      emoji.style.cursor = 'default';
+    }
+  }
+
+  handleEmojiClick = e => {
+    const shortcode = e.target.dataset.shortcode;
+    const domain = e.target.dataset.domain;
+
+    if (this.context.router) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.context.router.history.push(`/emoji_detail/${shortcode}${domain ? `@${domain}` : ''}`);
     }
   }
 
   handleRefresh = () => {
-    this.props.dispatch(fetchEmojiReactions(this.props.params.statusId));
+    const { params: { statusId }, dispatch } = this.props;
+
+    dispatch(fetchEmojiReactions(statusId));
   }
 
   handleLoadMore = debounce(() => {
-    this.props.dispatch(expandEmojiReactions(this.props.params.statusId));
+    const { params: { statusId }, dispatch } = this.props;
+
+    dispatch(expandEmojiReactions(statusId));
   }, 300, { leading: true })
 
   handleWidthChange = (value) => {
@@ -104,6 +165,10 @@ class EmojiReactions extends ImmutablePureComponent {
     } else {
       dispatch(changeSetting(['emoji_reactions', 'columnWidth'], value));
     }
+  }
+
+  setRef = (c) => {
+    this.node = c;
   }
 
   render () {
@@ -133,20 +198,24 @@ class EmojiReactions extends ImmutablePureComponent {
 
         <ReactedHeaderContaier statusId={this.props.params.statusId} />
 
-        <ScrollableList
-          scrollKey='emoji_reactions'
-          hasMore={hasMore}
-          isLoading={isLoading}
-          onLoadMore={this.handleLoadMore}
-          emptyMessage={emptyMessage}
-          bindToDocument={!multiColumn}
-        >
-          {emojiReactions.map(emojiReaction =>
-            <AccountContainer key={emojiReaction.get('account')+emojiReaction.get('name')} id={emojiReaction.get('account')} withNote={false} append={<Reaction emojiReaction={emojiReaction} />} />,
-          )}
-        </ScrollableList>
+        <div ref={this.setRef}>
+          <ScrollableList
+            scrollKey='emoji_reactions'
+            hasMore={hasMore}
+            isLoading={isLoading}
+            onLoadMore={this.handleLoadMore}
+            emptyMessage={emptyMessage}
+            bindToDocument={!multiColumn}
+          >
+            {emojiReactions.map(emojiReaction =>
+              <AccountContainer key={emojiReaction.get('account')+emojiReaction.get('name')} id={emojiReaction.get('account')} withNote={false} append={<Reaction emojiReaction={emojiReaction} />} />,
+            )}
+          </ScrollableList>
+        </div>
       </Column>
     );
   }
 
 }
+
+export default injectIntl(connect(mapStateToProps)(EmojiReactions));

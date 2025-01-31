@@ -376,14 +376,13 @@ ja:
     custom_emojis:
       apply_batch_assignment: 一括指定を適用
       assign_category: カテゴリーを割り当て
-      author:
-        title: 制作者
       by_description: 記述内容
       by_domain: ドメイン
       category: カテゴリー
       copied_msg: 絵文字のコピーをローカルに作成しました
-      copy: コピー
+      copy: コピー（追加）
       copy_failed_msg: 絵文字のコピーをローカルに作成できませんでした
+      copy_ow: コピー（上書き）
       copy_permission:
         all: すべて
         allow: 許可
@@ -393,7 +392,7 @@ ja:
         deny: 禁止
         deny_long: リモートサーバーへのコピー利用を拒否する
         none: 未設定
-        none_long: 設定しない
+        none_long: 設定なし
         title: コピー許可
       copy_permission_action:
         allow: コピー利用を許可する
@@ -401,12 +400,21 @@ ja:
         deny: コピー利用を拒否する
         none: 未設定にする
         prompt: （コピー利用の可否を選択）
+      copyright_notice:
+        hint: 知的財産権を有する権利者を明示する著作権表示を記載します。
+        title: 著作権表示
       create_new_category: カテゴリーを作成
       created_msg: 絵文字の追加に成功しました！
+      creator:
+        title: 制作者
+      credit_text:
+        hint: 頒布する際に明示する必要のあるクレジットを記載します。
+        title: クレジット
       delete: 削除
       description:
-        title: 絵文字の解説
+        title: 絵文字の説明
       destroyed_msg: 絵文字の削除に成功しました！
+      detail: カスタム絵文字の詳細
       disable: 無効化
       disabled: 無効
       disabled_msg: 絵文字を無効化しました
@@ -418,7 +426,12 @@ ja:
       enabled_msg: 絵文字を有効化しました
       fetch: 再取得
       go_to_index: 一覧へ（保存しない）
-      image_hint: 50KBまでのPNG画像を利用できます
+      image: 画像
+      image_hint: "%{kbsize}KBまでの%{types}画像を利用できます"
+      image_meta: 画像情報
+      is_based_on:
+        category: コピー元のカテゴリー
+        title: コピー元
       keyword_action:
         apend: キーワードを末尾に追加
         overwrite: キーワードを上書き
@@ -452,6 +465,9 @@ ja:
         older: 古い
         title: 並び順
       overwrite: 上書き
+      related_link:
+        hint: 絵文字の説明ページ、登録申請の投稿など、関連するリンクを改行区切りで記載します
+        title: 関連リンク
       save_changes: 保存して一覧へ
       save_changes_and_next: 保存して次へ
       sensitive:
@@ -468,6 +484,7 @@ ja:
         match: 一致
         prompt: 一致タイプを選択
         start_with: で始まる
+      source: ソース
       status:
         all: すべて
         disable: 無効
@@ -478,12 +495,13 @@ ja:
       unlist: 非表示
       unlisted: 非表示
       update_failed_msg: 絵文字を更新できませんでした
+      updated_at: 更新日時
       updated_msg: 絵文字の更新に成功しました！
       upload: アップロード
       upload_once_more: アップロード（連続）
       usage_info:
-        hint: ライセンスだけで説明できない内容の補足や、特別な契約方法などを記載します。
-        title: ライセンス追加情報
+        hint: 利用する際に守るべき内容、手順の案内や、商用ライセンスの契約方法などを記載します。
+        title: 利用条件等の追加情報
       visibility:
         all: すべて
         hide: 非表示

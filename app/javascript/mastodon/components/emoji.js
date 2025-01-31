@@ -13,10 +13,11 @@ export default class Emoji extends React.PureComponent {
     hovered: PropTypes.bool.isRequired,
     url: PropTypes.string,
     static_url: PropTypes.string,
+    domain: PropTypes.string,
   };
 
   render () {
-    const { emoji, hovered, url, static_url } = this.props;
+    const { emoji, hovered, url, static_url, domain } = this.props;
 
     if (unicodeMapping[emoji]) {
       const { filename, shortCode } = unicodeMapping[emoji];
@@ -42,8 +43,12 @@ export default class Emoji extends React.PureComponent {
           draggable='false'
           className={className}
           alt={shortCode}
-          title={shortCode}
+          title={emoji}
           src={filename}
+          data-shortcode={emoji}
+          data-domain={domain}
+          data-original={url}
+          data-static={static_url}
         />
       );
     } else {

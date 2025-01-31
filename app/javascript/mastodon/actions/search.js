@@ -1,6 +1,6 @@
 import api from '../api';
 import { fetchRelationshipsSuccess, fetchRelationships } from './accounts';
-import { importFetchedAccounts, importFetchedStatuses } from './importer';
+import { importFetchedAccounts, importFetchedStatuses, importFetchedCustomEmojisDetail } from './importer';
 
 export const SEARCH_CHANGE = 'SEARCH_CHANGE';
 export const SEARCH_CLEAR  = 'SEARCH_CLEAR';
@@ -32,7 +32,7 @@ export function submitSearch() {
     const value = getState().getIn(['search', 'value']);
 
     if (value.length === 0) {
-      dispatch(fetchSearchSuccess({ accounts: [], statuses: [], hashtags: [], profiles: [] }, ''));
+      dispatch(fetchSearchSuccess({ accounts: [], statuses: [], hashtags: [], profiles: [], custom_emojis: [] }, ''));
       return;
     }
 
@@ -59,12 +59,16 @@ export function submitSearch() {
         if (response.data.statuses.statuses && response.data.statuses.accounts) {
           const { statuses, referenced_statuses, accounts, relationships } = response.data.statuses;
           response.data.statuses = statuses;
-          dispatch(importFetchedStatuses(statuses.concat(referenced_statuses)));
           dispatch(importFetchedAccounts(accounts));
+          dispatch(importFetchedStatuses(statuses.concat(referenced_statuses)));
           dispatch(fetchRelationshipsSuccess(relationships));
         } else {
           dispatch(importFetchedStatuses(response.data.statuses));
         }
+      }
+
+      if (response.data.custom_emojis) {
+        dispatch(importFetchedCustomEmojisDetail(response.data.custom_emojis));
       }
 
       dispatch(fetchSearchSuccess(response.data, value));
@@ -133,12 +137,16 @@ export const expandSearch = type => (dispatch, getState) => {
       if (data.statuses.statuses && data.statuses.accounts) {
         const { statuses, referenced_statuses, accounts, relationships } = data.statuses;
         data.statuses = statuses;
-        dispatch(importFetchedStatuses(statuses.concat(referenced_statuses)));
         dispatch(importFetchedAccounts(accounts));
+        dispatch(importFetchedStatuses(statuses.concat(referenced_statuses)));
         dispatch(fetchRelationshipsSuccess(relationships));
       } else {
         dispatch(importFetchedStatuses(data.statuses));
       }
+    }
+
+    if (data.custom_emojis) {
+      dispatch(importFetchedCustomEmojisDetail(data.custom_emojis));
     }
 
     dispatch(expandSearchSuccess(data, value, type));

@@ -49,11 +49,32 @@ class CustomEmoji < ApplicationRecord
     'misskeyLicense'   => 'misskey_license',
     '_misskey_license' => 'misskey_license',
     '_misskeyLicense'  => 'misskey_license',
+    'copyrightNotice'  => 'copyright_notice',
+    'creditText'       => 'credit_text',
     'usageInfo'        => 'usage_info',
-    'creator'          => 'author',
+    'relatedLink'      => 'related_link',
+    'author'           => 'creator',
     'isBasedOn'        => 'is_based_on',
     'orgCategory'      => 'org_category',
     'copyPermission'   => 'copy_permission',
+  }
+
+  COMMON_LICENSES = {
+    'http://www.apache.org/licenses/LICENSE-2.0'         => 'Apache-2.0',
+    'https://creativecommons.org/licenses/by/4.0/'       => 'CC BY 4.0',
+    'https://creativecommons.org/licenses/by-sa/4.0/'    => 'CC BY-SA 4.0',
+    'https://creativecommons.org/licenses/by-nc/4.0/'    => 'CC BY-NC 4.0',
+    'https://creativecommons.org/licenses/by-nc-sa/4.0/' => 'CC BY-NC-SA 4.0',
+    'https://creativecommons.org/licenses/by-nd/4.0/'    => 'CC BY-ND 4.0',
+    'https://creativecommons.org/licenses/by-nc-nd/4.0/' => 'CC BY-NC-ND 4.0',
+    'https://creativecommons.org/licenses/by/3.0/'       => 'CC BY 3.0',
+    'https://creativecommons.org/licenses/by-sa/3.0/'    => 'CC BY-SA 3.0',
+    'https://creativecommons.org/licenses/by-nc/3.0/'    => 'CC BY-NC 3.0',
+    'https://creativecommons.org/licenses/by-nc-sa/3.0/' => 'CC BY-NC-SA 3.0',
+    'https://creativecommons.org/licenses/by-nd/3.0/'    => 'CC BY-ND 3.0',
+    'https://creativecommons.org/licenses/by-nc-nd/3.0/' => 'CC BY-NC-ND 3.0',
+    'https://creativecommons.org/publicdomain/zero/1.0/' => 'CC0',
+    'https://creativecommons.org/publicdomain/mark/1.0/' => 'PD',
   }
 
   IMAGE_FILE_EXTENSIONS = %w(.png .gif .webp .jpg .jpeg .heif .heic .avif .bmp).freeze
@@ -62,6 +83,7 @@ class CustomEmoji < ApplicationRecord
 
   GLOBAL_CONVERT_OPTIONS = {
     all: '+profile "!icc,*" +set modify-date +set create-date -define webp:use-sharp-yuv=1 -define webp:emulate-jpeg-size=true -quality 90',
+    static: '-coalesce',
   }.freeze
 
   attr_accessor :category_name
@@ -106,12 +128,40 @@ class CustomEmoji < ApplicationRecord
     end
   end
 
+  def related_link
+    meta['related_link']&.join("\n") || ''
+  end
+
+  def related_link=(val)
+    if val.is_a?(Array)
+      meta['related_link'] = val
+    else
+      meta['related_link'] = val.split(/[ \r\n]/).compact_blank
+    end
+  end
+
+  def related_links
+    Array(meta['related_link']).compact_blank
+  end
+
+  def related_links=(val)
+    if val.is_a?(Array)
+      meta['related_link'] = val
+    else
+      meta['related_link'] = val.split(/[ \r\n]/).compact_blank
+    end
+  end
+
   def license
     meta['license']
   end
 
   def license=(val)
-    meta['license'] = val
+    meta['license'] = COMMON_LICENSES.find { |_k, v| v == val }&.first || val
+  end
+
+  def license_name
+    COMMON_LICENSES[meta['license']]
   end
 
   def misskey_license
@@ -130,12 +180,12 @@ class CustomEmoji < ApplicationRecord
     meta['usage_info'] = val
   end
 
-  def author
-    meta['author']
+  def creator
+    meta['creator']
   end
 
-  def author=(val)
-    meta['author'] = val
+  def creator=(val)
+    meta['creator'] = val
   end
 
   def description
@@ -144,6 +194,22 @@ class CustomEmoji < ApplicationRecord
 
   def description=(val)
     meta['description'] = val
+  end
+
+  def copyright_notice
+    meta['copyright_notice']
+  end
+
+  def copyright_notice=(val)
+    meta['copyright_notice'] = val
+  end
+
+  def credit_text
+    meta['credit_text']
+  end
+
+  def credit_text=(val)
+    meta['credit_text'] = val
   end
 
   def is_based_on
@@ -243,6 +309,7 @@ class CustomEmoji < ApplicationRecord
       styles = {
         original: {
           pixels: MAX_PIXELS,
+          animated: true,
           file_geometry_parser: FastGeometryParser,
         },
     
