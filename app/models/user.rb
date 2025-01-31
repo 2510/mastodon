@@ -43,6 +43,7 @@
 #  webauthn_id               :string
 #  sign_up_ip                :inet
 #  skip_sign_in_token        :boolean
+#  time_zone                 :string
 #
 
 class User < ApplicationRecord
@@ -87,8 +88,6 @@ class User < ApplicationRecord
   accepts_nested_attributes_for :invite_request, reject_if: ->(attributes) { attributes['text'].blank? && !Setting.require_invite_text }
   validates :invite_request, presence: true, on: :create, if: :invite_text_required?
 
-  validates :locale, inclusion: I18n.available_locales.map(&:to_s), if: :locale?
-
   validates :email, presence: true, email_address: true
 
   validates_with BlacklistedEmailValidator, if: -> { ENV['EMAIL_DOMAIN_LISTS_APPLY_AFTER_CONFIRMATION'] == 'true' || !confirmed? }
@@ -116,6 +115,8 @@ class User < ApplicationRecord
   scope :emailable, -> { confirmed.enabled.joins(:account).merge(Account.searchable) }
 
   before_validation :sanitize_languages
+  before_validation :sanitize_time_zone
+  before_validation :sanitize_locale
   before_create :set_approved
   after_commit :send_pending_devise_notifications
 
@@ -545,6 +546,14 @@ class User < ApplicationRecord
     return if chosen_languages.nil?
     chosen_languages.reject!(&:blank?)
     self.chosen_languages = nil if chosen_languages.empty?
+  end
+
+  def sanitize_time_zone
+    self.time_zone = nil if time_zone.present? && ActiveSupport::TimeZone[time_zone].nil?
+  end
+
+  def sanitize_locale
+    self.locale = nil if locale.present? && I18n.available_locales.exclude?(locale.to_sym)
   end
 
   def prepare_new_user!

@@ -92,6 +92,11 @@ import {
   FEATURED_TAGS_FETCH_SUCCESS,
   FEATURED_TAGS_FETCH_FAIL,
 } from 'mastodon/actions/featured_tags';
+import {
+  CUSTOM_EMOJI_DETAIL_FETCH_REQUEST,
+  CUSTOM_EMOJI_DETAIL_FETCH_SUCCESS,
+  CUSTOM_EMOJI_DETAIL_FETCH_FAIL,
+} from 'mastodon/actions/custom_emojis';
 import { Map as ImmutableMap, List as ImmutableList, fromJS } from 'immutable';
 
 const initialListState = ImmutableMap({
@@ -101,17 +106,18 @@ const initialListState = ImmutableMap({
 });
 
 const initialState = ImmutableMap({
-  followers: initialListState,
-  following: initialListState,
-  subscribing: initialListState,
-  reblogged_by: initialListState,
-  favourited_by: initialListState,
-  emoji_reactioned_by: initialListState,
-  mentioned_by: initialListState,
+  followers: ImmutableMap(),
+  following: ImmutableMap(),
+  subscribing: ImmutableMap(),
+  reblogged_by: ImmutableMap(),
+  favourited_by: ImmutableMap(),
+  emoji_reactioned_by: ImmutableMap(),
+  mentioned_by: ImmutableMap(),
   follow_requests: initialListState,
   blocks: initialListState,
   mutes: initialListState,
-  featured_tags: initialListState,
+  featured_tags: ImmutableMap(),
+  custom_emojis_detail: initialListState,
 });
 
 const normalizeList = (state, path, accounts, next) => {
@@ -135,7 +141,7 @@ const normalizeFollowRequest = (state, notification) => {
 };
 
 const normalizeEmojiReaction = emojiReaction => {
-  const normalizeEmojiReaction = { ...emojiReaction, account: emojiReaction.account.id };
+  const normalizeEmojiReaction = { ...emojiReaction, account: emojiReaction.account.id, domain: emojiReaction.account.acct.split('@')[1] };
   return fromJS(normalizeEmojiReaction);
 };
 
@@ -298,6 +304,11 @@ export default function userLists(state = initialState, action) {
     return state.setIn(['featured_tags', action.id, 'isLoading'], true);
   case FEATURED_TAGS_FETCH_FAIL:
     return state.setIn(['featured_tags', action.id, 'isLoading'], false);
+  case CUSTOM_EMOJI_DETAIL_FETCH_REQUEST:
+        return state.setIn(['custom_emojis_detail', 'isLoading'], true);
+  case CUSTOM_EMOJI_DETAIL_FETCH_SUCCESS:
+  case CUSTOM_EMOJI_DETAIL_FETCH_FAIL:
+    return state.setIn(['custom_emojis_detail', 'isLoading'], false);
   default:
     return state;
   }
