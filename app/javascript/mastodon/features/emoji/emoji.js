@@ -56,7 +56,7 @@ const emojifyTextNode = (node, customEmojis, domain) => {
           const filename = autoPlayGif ? customEmojis[shortname].url : customEmojis[shortname].static_url;
           const aliases = customEmojis[shortname].aliases ?? [];
           const shortcode = shortname.slice(1, -1);
-          const displayname = aliases[0] ?? shortcode;
+          const displayname = !domain && aliases[0] ? aliases[0] : shortcode;
           replacement = `<img draggable="false" class="emojione custom-emoji" alt="${shortname}" title="${displayname}" src="${filename}" data-shortcode="${shortcode}" data-domain="${domain}" data-original="${customEmojis[shortname].url}" data-static="${customEmojis[shortname].static_url}" />`;
           return true;
         }
