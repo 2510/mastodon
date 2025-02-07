@@ -22,21 +22,25 @@ const messages = defineMessages({
   refresh: { id: 'refresh', defaultMessage: 'Refresh' },
 });
 
-const mapStateToProps = (state, { columnId, params }) => {
+const mapStateToProps = (state, { columnId, params: { statusId } }) => {
   const uuid = columnId;
   const columns = state.getIn(['settings', 'columns']);
   const index = columns.findIndex(c => c.get('uuid') === uuid);
-  const columnWidth = (columnId && index >= 0) ? columns.get(index).getIn(['params', 'columnWidth']) : state.getIn(['settings', 'emoji_reactions', 'columnWidth']);
+  const columnWidth = (columnId && index >= 0) ? columns.get(index).getIn(['params', 'columnWidth']) : state.getIn(['settings', 'emoji_reactioned_by', 'columnWidth']);
 
   return {
-    emojiReactions: state.getIn(['user_lists', 'emoji_reactioned_by', params.statusId, 'items']),
-    isLoading: state.getIn(['user_lists', 'emoji_reactioned_by', params.statusId, 'isLoading'], true),
-    hasMore: !!state.getIn(['user_lists', 'emoji_reactioned_by', params.statusId, 'next']),
+    emojiReactions: state.getIn(['user_lists', 'emoji_reactioned_by', statusId, 'items']),
+    isLoading: state.getIn(['user_lists', 'emoji_reactioned_by', statusId, 'isLoading'], true),
+    hasMore: !!state.getIn(['user_lists', 'emoji_reactioned_by', statusId, 'next']),
     columnWidth: columnWidth ?? defaultColumnWidth,
   };
 };
 
 class Reaction extends ImmutablePureComponent {
+
+  static contextTypes = {
+    router: PropTypes.object,
+  };
 
   static propTypes = {
     emojiReaction: ImmutablePropTypes.map,
@@ -46,94 +50,6 @@ class Reaction extends ImmutablePureComponent {
     hovered: false,
   };
 
-  handleMouseEnter = () => this.setState({ hovered: true })
-
-  handleMouseLeave = () => this.setState({ hovered: false })
-
-  render () {
-    const { emojiReaction } = this.props;
-
-    return (
-      <div className='account__emoji_reaction' onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave}>
-        <Emoji className='reaction' hovered={this.state.hovered} emoji={emojiReaction.get('name')} url={emojiReaction.get('url')} static_url={emojiReaction.get('static_url')} domain={emojiReaction.get('domain')} />
-      </div>
-    );
-  };
-}
-
-class EmojiReactions extends React.PureComponent {
-
-  static contextTypes = {
-    router: PropTypes.object,
-  };
-
-  static propTypes = {
-    params: PropTypes.object.isRequired,
-    dispatch: PropTypes.func.isRequired,
-    emojiReactions: ImmutablePropTypes.list,
-    multiColumn: PropTypes.bool,
-    columnWidth: PropTypes.string,
-    intl: PropTypes.object.isRequired,
-    hasMore: PropTypes.bool,
-    isLoading: PropTypes.bool,
-  };
-
-  componentDidMount () {
-    const { emojiReactions, params: { statusId }, dispatch } = this.props;
-
-    if (!emojiReactions) {
-      dispatch(fetchEmojiReactions(statusId));
-    }
-
-    this._updateEmojiLinks();
-  }
-
-  componentDidUpdate (prevProps) {
-    const { emojiReactions, params: { statusId }, dispatch } = this.props;
-
-    if (!emojiReactions || prevProps.params.statusId !== statusId) {
-      dispatch(fetchEmojiReactions(statusId));
-    }
-
-    this._updateEmojiLinks();
-  }
-
-  componentWillUnmount () {
-    this._removeEmojiLinks();
-  }
-
-  _updateEmojiLinks () {
-    const node = this.node;
-
-    if (!node) {
-      return;
-    }
-
-    const emojis = node.querySelectorAll('.custom-emoji');
-
-    for (var i = 0; i < emojis.length; i++) {
-      let emoji = emojis[i];
-      emoji.addEventListener('click', this.handleEmojiClick, false);
-      emoji.style.cursor = 'pointer';
-    }
-  }
-
-  _removeEmojiLinks () {
-    const node = this.node;
-
-    if (!node) {
-      return;
-    }
-
-    const emojis = node.querySelectorAll('.custom-emoji');
-
-    for (var i = 0; i < emojis.length; i++) {
-      let emoji = emojis[i];
-      emoji.removeEventListener('click', this.handleEmojiClick, false);
-      emoji.style.cursor = 'default';
-    }
-  }
-
   handleEmojiClick = e => {
     const shortcode = e.target.dataset.shortcode;
     const domain = e.target.dataset.domain;
@@ -142,6 +58,52 @@ class EmojiReactions extends React.PureComponent {
       e.preventDefault();
       e.stopPropagation();
       this.context.router.history.push(`/emoji_detail/${shortcode}${domain ? `@${domain}` : ''}`);
+    }
+  }
+
+  handleMouseEnter = () => this.setState({ hovered: true })
+
+  handleMouseLeave = () => this.setState({ hovered: false })
+
+  render () {
+    const { emojiReaction } = this.props;
+
+    return (
+      <div className='account__emoji_reaction' onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave} ref={this.setRef}>
+        <Emoji className='reaction' hovered={this.state.hovered} emoji={emojiReaction.get('name')} url={emojiReaction.get('url')} static_url={emojiReaction.get('static_url')} domain={emojiReaction.get('domain')} onClick={this.handleEmojiClick} />
+      </div>
+    );
+  };
+}
+
+class EmojiReactions extends React.PureComponent {
+
+  static propTypes = {
+    dispatch: PropTypes.func.isRequired,
+    emojiReactions: ImmutablePropTypes.list,
+    multiColumn: PropTypes.bool,
+    columnWidth: PropTypes.string,
+    intl: PropTypes.object.isRequired,
+    hasMore: PropTypes.bool,
+    isLoading: PropTypes.bool,
+    params: PropTypes.shape({
+      statusId: PropTypes.string,
+    }),
+  };
+
+  componentDidMount () {
+    const { emojiReactions, params: { statusId }, dispatch } = this.props;
+
+    if (!emojiReactions) {
+      dispatch(fetchEmojiReactions(statusId));
+    }
+  }
+
+  componentDidUpdate (prevProps) {
+    const { emojiReactions, params: { statusId }, dispatch } = this.props;
+
+    if (!emojiReactions || prevProps.params.statusId !== statusId) {
+      dispatch(fetchEmojiReactions(statusId));
     }
   }
 
