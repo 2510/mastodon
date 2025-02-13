@@ -175,7 +175,7 @@ class CustomEmoji < ApplicationRecord
     if val.is_a?(Array)
       self[:aliases] = val.compact_blank
     elsif val.is_a?(String)
-      self[:aliases] = val.split(/[ \r\n]/).compact_blank
+      self[:aliases] = val.split(/[ \u3000\r\n]/).compact_blank
     else
       self[:aliases] = []
     end
