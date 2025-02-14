@@ -8,6 +8,8 @@ import Emoji from './emoji';
 
 const messages = defineMessages({
   linkToAcct: { id: 'status.link_to_acct', defaultMessage: 'Link to @{acct}' },
+  linkToCustomEmojiInLocal: { id: 'status.link_to_custom_emoji_in_local', defaultMessage: 'Link to :@{shortcode}:' },
+  linkToCustomEmojiInRemote: { id: 'status.link_to_custom_emoji_in_remote', defaultMessage: 'Link to :@{shortcode}: in @{domain}' },
   postByAcct: { id: 'status.post_by_acct', defaultMessage: 'Post by @{acct}' },
 });
 
@@ -31,22 +33,6 @@ class CustomEmojiResult extends React.PureComponent {
     hovered: false,
   };
 
-  _updateEmojiLinks () {
-    const target = this.target;
-
-    if (!target) {
-      return;
-    }
-
-    const emojis = target.querySelectorAll('.custom-emoji');
-
-    for (var i = 0; i < emojis.length; i++) {
-      let emoji = emojis[i];
-      emoji.addEventListener('click', this.handleEmojiClick, false);
-      emoji.style.cursor = 'pointer';
-    }
-  }
-
   handleEmojiClick = e => {
     const shortcode = e.target.dataset.shortcode;
     const domain = e.target.dataset.domain;
@@ -57,6 +43,9 @@ class CustomEmojiResult extends React.PureComponent {
       this.context.router.history.push(`/emoji_detail/${shortcode}${domain ? `@${domain}` : ''}`);
     }
   }
+
+  handleMouseEnter = () => this.setState({ hovered: true });
+  handleMouseLeave = () => this.setState({ hovered: false });
 
   _updateLinks () {
     const { intl } = this.props;
@@ -83,14 +72,21 @@ class CustomEmojiResult extends React.PureComponent {
       }
       link.classList.add('status-link');
 
-      if (link.textContent[0] === '#' || (link.previousSibling && link.previousSibling.textContent && link.previousSibling.textContent[link.previousSibling.textContent.length - 1] === '#')) {
+      if (link.classList.contains('custom-emoji-url-link') && link.dataset.shortcode) {
+        if (link.dataset.domain) {
+          link.setAttribute('title', intl.formatMessage(messages.linkToCustomEmojiInRemote, { shortcode: link.dataset.shortcode, domain: link.dataset.domain }));
+        } else {
+          link.setAttribute('title', intl.formatMessage(messages.linkToCustomEmojiInLocal, { shortcode: link.dataset.shortcode }));
+        }
+        link.addEventListener('click', this.onCustomEmojiUrlClick.bind(this, link.dataset.shortcode, link.dataset.domain), false);
+      } else if (link.textContent[0] === '#' || (link.previousSibling && link.previousSibling.textContent && link.previousSibling.textContent[link.previousSibling.textContent.length - 1] === '#')) {
         link.addEventListener('click', this.onHashtagClick.bind(this, link.text), false);
       } else if (link.classList.contains('account-url-link')) {
         link.setAttribute('title', intl.formatMessage(messages.linkToAcct, { acct: link.dataset.accountAcct }));
-        link.addEventListener('click', this.onAccountUrlClick.bind(this, link.dataset.accountId, link.dataset.accountActorType), false);
+        link.addEventListener('click', this.onAccountUrlClick.bind(this, link.dataset.accountId, link.dataset.path ?? '', link.dataset.accountActorType), false);
       } else if (link.classList.contains('status-url-link')) {
         link.setAttribute('title', intl.formatMessage(messages.postByAcct, { acct: link.dataset.statusAccountAcct }));
-        link.addEventListener('click', this.onStatusUrlClick.bind(this, link.dataset.statusId), false);
+        link.addEventListener('click', this.onStatusUrlClick.bind(this, link.dataset.statusId, link.dataset.path ?? ''), false);
       } else {
         link.setAttribute('title', link.href);
         link.classList.add('unhandled-link');
@@ -101,41 +97,17 @@ class CustomEmojiResult extends React.PureComponent {
     }
   }
 
-  handleMouseEnter = () => {
-    this.setState({
-      hovered: true,
-    });
-  };
-
-  handleMouseLeave = () => {
-    this.setState({
-      hovered: false,
-    });
-  };
-
-  setTargetRef = c => {
-    this.target = c;
-  };
-
   setRef = (c) => {
     this.node = c;
   }
 
   componentDidMount () {
     this._updateLinks();
-    this._updateEmojiLinks();
-    this.target?.addEventListener('mouseenter', this.handleMouseEnter, { capture: true });
-    this.target?.addEventListener('mouseleave', this.handleMouseLeave, false);
   }
 
   componentDidUpdate () {
     this._updateLinks();
     this._updateEmojiLinks();
-  }
-
-  componentWillUnmount () {
-    this.target?.removeEventListener('mouseenter', this.handleMouseEnter, { capture: true });
-    this.target?.removeEventListener('mouseleave', this.handleMouseLeave, false);
   }
 
   onHashtagClick = (hashtag, e) => {
@@ -147,17 +119,17 @@ class CustomEmojiResult extends React.PureComponent {
     }
   }
 
-  onAccountUrlClick = (accountId, accountActorType, e) => {
+  onAccountUrlClick = (accountId, path, accountActorType, e) => {
     if (this.context.router && e.button === 0 && !(e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      this.context.router.history.push(`${accountActorType == 'Group' ? '/timelines/groups/' : '/accounts/'}${accountId}`);
+      this.context.router.history.push(`${accountActorType == 'Group' ? '/timelines/groups/' : '/accounts/'}${accountId}${path}`);
     }
   }
 
-  onStatusUrlClick = (statusId, e) => {
+  onStatusUrlClick = (statusId, path, e) => {
     if (this.context.router && e.button === 0 && !(e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      this.context.router.history.push(`/statuses/${statusId}`);
+      this.context.router.history.push(`/statuses/${statusId}${path}`);
     }
   }
 
@@ -168,20 +140,30 @@ class CustomEmojiResult extends React.PureComponent {
     }
   }
 
+  onCustomEmojiUrlClick = (shortcode, domain, e) => {
+    if (this.context.router && e.button === 0 && !(e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      this.context.router.history.push(`/emoji_detail/${shortcode}${domain ? `@${domain}` : ''}`);
+    }
+  }
+
   render () {
-    const { shortcode_with_domain, custom_emoji } = this.props;
+    const { custom_emoji } = this.props;
 
     if (!custom_emoji) {
-      return <div />;
+      return null;
     }
 
     const shortcode = custom_emoji.get('shortcode');
     const domain = custom_emoji.get('domain');    
+    const title = custom_emoji.get('alternate_name') ?? shortcode;
     const summary = custom_emoji.get('summary') ?? custom_emoji.get('misskey_license');
 
     return (
       <div className='custom-emoji__result'>
-        <div className='custom-emoji__image' ref={this.setTargetRef}><Emoji emoji={shortcode_with_domain} hovered={this.state.hovered} url={custom_emoji.get('url')} static_url={custom_emoji.get('static_url')} /></div>
+        <div className='custom-emoji__image' onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave}>
+          <Emoji emoji={shortcode} domain={domain} hovered={this.state.hovered} title={title} url={custom_emoji.get('url')} static_url={custom_emoji.get('static_url')} onClick={this.handleEmojiClick}/>
+        </div>
         <div className='custom-emoji__shortcode'>:{shortcode}:{domain && <span className='custom-emoji__domain_part'>{domain}</span>}</div>
         {summary && 
           <div className='custom-emoji__summary_wrapper' ref={this.setRef}>

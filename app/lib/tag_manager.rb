@@ -23,9 +23,13 @@ class TagManager
   end
 
   def local_url?(url)
-    uri    = Addressable::URI.parse(url).normalize
+    uri    = Addressable::URI.parse(url)&.normalize
+    return if uri&.host.blank?
+
     domain = uri.host + (uri.port ? ":#{uri.port}" : '')
 
     TagManager.instance.web_domain?(domain)
+  rescue Addressable::URI::InvalidURIError
+    nil
   end
 end
