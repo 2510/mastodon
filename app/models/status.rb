@@ -148,6 +148,7 @@ class Status < ApplicationRecord
   }
   scope :unset_searchability, -> { where(searchability: nil, reblog_of_id: nil) }
   scope :indexable, -> { without_reblogs.where(visibility: :public).joins(:account).where(account: { indexable: true }) }
+  scope :list_eligible_visibility, -> { where(visibility: %i(public unlisted private)) }
 
   cache_associated :application,
                    :media_attachments,
@@ -502,6 +503,7 @@ class Status < ApplicationRecord
 
   def generate_grouped_emoji_reactions
     records = emoji_reactions.group(:name).order(Arel.sql('MIN(created_at) ASC')).select('name, min(custom_emoji_id) as custom_emoji_id, count(*) as count, array_agg(account_id::text order by created_at) as account_ids').limit(EmojiReactionValidator::LIMIT)
+    ActiveRecord::Associations::Preloader.new.preload(records, :custom_emoji)
     Oj.dump(ActiveModelSerializers::SerializableResource.new(records, each_serializer: REST::GroupedEmojiReactionSerializer, scope: nil, scope_name: :current_user))
   end
 

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class REST::CustomEmojiDetailSerializer < REST::CustomEmojiSerializer
-  attributes :local, :domain, :updated_at
+  attributes :local, :domain, :updated_at, :last_fetched_at
 
   attribute :copy_permission, if: :copy_permission?
   attribute :license, if: :license?
@@ -11,6 +11,7 @@ class REST::CustomEmojiDetailSerializer < REST::CustomEmojiSerializer
   attribute :description, if: :description?
   attribute :copyright_notice, if: :copyright_notice?
   attribute :credit_text, if: :credit_text?
+  attribute :is_based_on_uri, if: :is_based_on?
   attribute :is_based_on, if: :is_based_on?
   attribute :sensitive, if: :sensitive?
   attribute :misskey_license, if: :misskey_license?
@@ -61,6 +62,14 @@ class REST::CustomEmojiDetailSerializer < REST::CustomEmojiSerializer
     end
   end
 
+  def is_based_on_uri
+    object.is_based_on
+  end
+
+  def is_based_on
+    Formatter.instance.linkify(object.is_based_on)
+  end
+
   def local
     object.local?
   end
@@ -71,6 +80,10 @@ class REST::CustomEmojiDetailSerializer < REST::CustomEmojiSerializer
 
   def updated_at
     object.updated_at
+  end
+
+  def last_fetched_at
+    object.last_fetched_at
   end
 
   def copy_permission?
