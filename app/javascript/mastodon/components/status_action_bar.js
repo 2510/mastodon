@@ -361,12 +361,16 @@ class StatusActionBar extends ImmutablePureComponent {
       }
     }
 
+    if (!(disableReactions || !publicStatus && !reblogPrivate || expired)) {
+      menu.push({ text: intl.formatMessage(messages.reblogTitle), action: this.handleReblogClick });
+    }
+
     if (reblogsCount > 0 || favouritesCount > 0 || !status.get('emoji_reactions').isEmpty()) {
       menu.push(null);
     }
 
     if (reblogsCount > 0) {
-      menu.push({ text: intl.formatMessage(messages.show_reblogs), action: this.handleReblogs });
+      menu.push({ text: intl.formatMessage(messages.reblog), action: this.handleReblogs });
     }
 
     if (favouritesCount > 0) {
@@ -500,7 +504,9 @@ class StatusActionBar extends ImmutablePureComponent {
       <div className='status__action-bar'>
         <IconButton className='status__action-bar-button' disabled={disablePost || expired} title={replyTitle} icon={status.get('in_reply_to_account_id') === status.getIn(['account', 'id']) ? 'reply' : replyIcon} onClick={this.handleReplyClick} counter={status.get('replies_count')} obfuscateCount />
         {enableStatusReference && me && <IconButton className={classNames('status__action-bar-button link-icon', { referenced, 'context-referenced': contextReferenced })} animate disabled={disablePost || referenceDisabled} active={referenced} pressed={referenced} title={intl.formatMessage(messages.reference)} icon='link' onClick={this.handleReferenceClick} />}
+        {/*
         <IconButton className={classNames('status__action-bar-button', { reblogPrivate })} disabled={disableReactions || !publicStatus && !reblogPrivate || expired}  active={reblogged} pressed={reblogged} title={reblogTitle} icon='retweet' onClick={this.handleReblogClick} />
+          */}
         <IconButton className='status__action-bar-button star-icon' animate disabled={disableReactions || !favourited && expired} active={favourited} pressed={favourited} title={intl.formatMessage(messages.favourite)} icon='star' onClick={this.handleFavouriteClick} />
         {show_quote_button && <IconButton className='status__action-bar-button' disabled={disablePost || anonymousAccess || !publicStatus || expired} title={!publicStatus ? intl.formatMessage(messages.cannot_quote) : intl.formatMessage(messages.quote)} icon='quote-right' onClick={this.handleQuoteClick} />}
         {shareButton}
