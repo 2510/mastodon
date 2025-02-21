@@ -112,7 +112,7 @@ class User < ApplicationRecord
   scope :active, -> { confirmed.where(arel_table[:current_sign_in_at].gteq(ACTIVE_DURATION.ago)).joins(:account).where(accounts: { suspended_at: nil }) }
   scope :matches_email, ->(value) { where(arel_table[:email].matches("#{value}%")) }
   scope :matches_ip, ->(value) { left_joins(:session_activations).where('users.current_sign_in_ip <<= ?', value).or(left_joins(:session_activations).where('users.sign_up_ip <<= ?', value)).or(left_joins(:session_activations).where('users.last_sign_in_ip <<= ?', value)).or(left_joins(:session_activations).where('session_activations.ip <<= ?', value)) }
-  scope :emailable, -> { confirmed.enabled.joins(:account).merge(Account.searchable) }
+  scope :emailable, -> { confirmed.enabled.joins(:account).merge(Account.without_suspended.where(moved_to_account_id: nil)) }
 
   before_validation :sanitize_languages
   before_validation :sanitize_time_zone
@@ -127,7 +127,8 @@ class User < ApplicationRecord
 
   has_many :session_activations, dependent: :destroy
 
-  delegate :auto_play_gif, :default_sensitive, :unfollow_modal, :unsubscribe_modal, :boost_modal, :delete_modal,
+  delegate :auto_play_gif, :default_sensitive,
+           :follow_modal, :unfollow_modal, :subscribe_modal, :unsubscribe_modal, :follow_tag_modal, :unfollow_tag_modal, :boost_modal, :delete_modal,
            :reduce_motion, :system_font_ui, :noindex, :theme, :display_media, :hide_network,
            :expand_spoilers, :default_language, :aggregate_reblogs, :show_application,
            :advanced_layout, :use_blurhash, :use_pending_items, :trends, :crop_images,
