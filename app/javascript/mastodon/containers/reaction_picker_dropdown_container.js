@@ -14,7 +14,6 @@ const mapStateToProps = state => ({
   pickersEmoji: getPickersEmoji(state),
   skinTone: state.getIn(['settings', 'skinTone']),
   frequentlyUsedEmojis: getFrequentlyUsedEmojis(state),
-  dropdownPlacement: state.getIn(['dropdown_menu', 'placement']),
   openDropdownId: state.getIn(['dropdown_menu', 'openId']),
   openedViaKeyboard: state.getIn(['dropdown_menu', 'keyboard']),
 });
@@ -32,10 +31,7 @@ const mapDispatchToProps = (dispatch, { status, onPickEmoji, scrollKey }) => ({
     }
   },
 
-  onOpen(id, dropdownPlacement, keyboard) {
-    document.body.classList.add('with-modals--active');
-    document.documentElement.style.marginRight = `${getScrollbarWidth()}px`;
-
+  onOpen(id, keyboard) {
     dispatch((_, getState) => {
       let state = getState();
       if (status) {
@@ -51,7 +47,7 @@ const mapDispatchToProps = (dispatch, { status, onPickEmoji, scrollKey }) => ({
         pickersEmoji: getPickersEmoji(state),
         skinTone: state.getIn(['settings', 'skinTone']),
         frequentlyUsedEmojis: getFrequentlyUsedEmojis(state),
-      }) : openDropdownMenu(id, dropdownPlacement, keyboard, scrollKey));
+      }) : openDropdownMenu(id, keyboard, scrollKey));
     });
   },
 
