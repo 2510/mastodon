@@ -361,10 +361,6 @@ class StatusActionBar extends ImmutablePureComponent {
       }
     }
 
-    if (!(disableReactions || !publicStatus && !reblogPrivate || expired)) {
-      menu.push({ text: intl.formatMessage(messages.reblogTitle), action: this.handleReblogClick });
-    }
-
     if (reblogsCount > 0 || favouritesCount > 0 || !status.get('emoji_reactions').isEmpty()) {
       menu.push(null);
     }
