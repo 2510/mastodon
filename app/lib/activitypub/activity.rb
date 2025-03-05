@@ -131,6 +131,7 @@ class ActivityPub::Activity
   end
 
   def crawl_links(status)
+    return if true
     return if status.spoiler_text?
     return unless FetchLinkCardService.new.need_fetch?(status)
 
