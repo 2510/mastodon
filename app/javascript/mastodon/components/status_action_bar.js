@@ -365,8 +365,9 @@ class StatusActionBar extends ImmutablePureComponent {
       menu.push(null);
     }
 
+    menu.push({ text: intl.formatMessage(messages.reblog), action: this.handleReblogClick });
     if (reblogsCount > 0) {
-      menu.push({ text: intl.formatMessage(messages.reblog), action: this.handleReblogs });
+      menu.push({ text: intl.formatMessage(messages.show_reblogs), action: this.handleReblogs });
     }
 
     if (favouritesCount > 0) {
