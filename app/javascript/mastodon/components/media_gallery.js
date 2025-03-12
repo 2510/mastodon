@@ -137,9 +137,11 @@ class Item extends React.PureComponent {
       }
     }
 
+    /*
     if (attachment.get('description')?.length > 0) {
       badges.push(<AltTextBadge key='alt' description={attachment.get('description')} />);
     }
+    */
 
     const description = attachment.get('description');
 
