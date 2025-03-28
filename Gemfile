@@ -86,9 +86,9 @@ gem 'rqrcode', '~> 2.0'
 gem 'ruby-progressbar', '~> 1.11'
 gem 'sanitize', '~> 6.0'
 gem 'scenic', '~> 1.5'
-gem 'sidekiq', '~> 6.2'
-gem 'sidekiq-scheduler', '~> 4.0'
-gem 'sidekiq-unique-jobs', '~> 7.1'
+gem 'sidekiq', '~> 7.3'
+gem 'sidekiq-scheduler', '~> 5.0'
+gem 'sidekiq-unique-jobs', '~> 8.0.10'
 gem 'sidekiq-bulk', '~>0.2.0'
 gem 'simple-navigation', '~> 4.3'
 gem 'simple_form', '~> 5.1'
@@ -160,7 +160,7 @@ group :production do
   gem 'lograge', '~> 0.11'
 end
 
-gem 'concurrent-ruby', require: false
+gem 'concurrent-ruby', '1.3.4', require: false
 gem 'connection_pool', require: false
 
 gem 'xorcist', '~> 1.1'
