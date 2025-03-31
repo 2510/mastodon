@@ -5,7 +5,7 @@ module AccountHeader
 
   IMAGE_MIME_TYPES = %w(image/jpeg image/png image/gif image/webp image/heif image/heic image/avif image/bmp).freeze
   IMAGE_CONVERTIBLE_MIME_TYPES = %w(image/heif image/heic image/bmp).freeze
-  LIMIT = 4.megabytes
+  LIMIT = 32.megabytes
   MAX_PIXELS = 750_000 # 1500x500px
 
   GLOBAL_CONVERT_OPTIONS = {

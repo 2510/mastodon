@@ -6,7 +6,7 @@ module AccountAvatar
   IMAGE_MIME_TYPES = %w(image/jpeg image/png image/gif image/webp image/heif image/heic image/avif image/bmp image/vnd.microsoft.icon).freeze
   IMAGE_CONVERTIBLE_MIME_TYPES = %w(image/heif image/heic image/bmp image/vnd.microsoft.icon).freeze
   IMAGE_ANIMATED_MIME_TYPES = %w(image/png image/gif image/webp).freeze
-  LIMIT = 4.megabytes
+  LIMIT = 32.megabytes
 
   BLURHASH_OPTIONS = {
     x_comp: 4,
